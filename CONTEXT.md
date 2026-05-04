@@ -66,6 +66,7 @@ Cursor: ask the agent to "run po-intake on [folder]").
 | PO | `/po-intake [folder]`, `/po-clarify`, `/po-handoff [F-XXX]` |
 | Designer | `/design-intake [F-XXX] [folder]`, `/design-clarify`, `/design-handoff [F-XXX]` |
 | Developer | `/prep-sprint`, `/dev-done [F-XXX]` |
+| Backend | `/add-endpoint`, `/add-integration`, `/create-migration`, `/document-entity`, `/generate-clients`, `/review-query`, `/review-security-surface`, `/debug-prod-issue` |
 | Board | `/board-review [F-XXX]` |
 | Shared | `/feature-status`, `/ask [F-XXX] "question" --to po\|designer\|dev`, `/audit-feature [F-XXX]`, `/lint-wiki`, `/wiki-show F-XXX`, `/wiki-blockers`, `/wiki-query "text"`, `/wiki-owner po\|designer\|dev`, `/wiki-platform <platform-id>` |
 
@@ -77,6 +78,7 @@ Cursor: ask the agent to "run po-intake on [folder]").
 | PO | `$po-intake [folder]`, `$po-clarify`, `$po-handoff [F-XXX]` |
 | Designer | `$design-intake [F-XXX] [folder]`, `$design-clarify`, `$design-handoff [F-XXX]` |
 | Developer | `$prep-sprint`, `$dev-done [F-XXX]` |
+| Backend | `$endpoint`, `$document-entity`, `$generate-clients` |
 | Board | `$board-review [F-XXX]` |
 | Shared | `$feature-status`, `$ask [F-XXX] "question" --to po\|designer\|dev`, `$audit-feature [F-XXX]`, `$lint-wiki`, `$wiki-show F-XXX`, `$wiki-blockers`, `$wiki-query "text"`, `$wiki-owner po\|designer\|dev`, `$wiki-platform <platform-id>` |
 
