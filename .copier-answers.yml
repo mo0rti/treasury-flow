@@ -1,0 +1,21 @@
+_src_path: C:\Workspace\Projects\Prism\main-repo
+_commit: 679ff0b6609e84e45bf699b531cad58433180fab
+description: A finance operations platform for payout approvals, settlements, and
+  transaction oversight
+auth_methods:
+- google
+- password
+- apple
+database: postgres
+use_docker: true
+cloud_provider: azure
+web_hosting: cloudflare
+github_org: mo0rti
+project_name: TreasuryFlow
+package_identifier: com.mortitech.treasuryflow
+platforms:
+- backend
+- mobile-android
+- web-user-app
+- web-admin-portal
+- mobile-ios

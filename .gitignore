@@ -1,0 +1,107 @@
+# =============================================================================
+# OS
+# =============================================================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+
+# =============================================================================
+# IDE
+# =============================================================================
+.idea/
+.vscode/
+*.iml
+
+# =============================================================================
+# Environment
+# =============================================================================
+.env
+.env.local
+.env.*.local
+.dev.vars*
+
+
+# =============================================================================
+# Backend (Spring Boot / Gradle)
+# =============================================================================
+backend/build/
+backend/.gradle/
+backend/.kotlin/
+backend/bin/
+backend/out/
+backend/src/generated/
+
+
+# =============================================================================
+# Web (Next.js)
+# =============================================================================
+web-user-app/node_modules/
+web-user-app/.next/
+web-user-app/.open-next/
+web-user-app/out/
+
+
+# =============================================================================
+# Admin (Next.js)
+# =============================================================================
+web-admin-portal/node_modules/
+web-admin-portal/.next/
+web-admin-portal/.open-next/
+web-admin-portal/out/
+
+
+# =============================================================================
+# Android
+# =============================================================================
+mobile-android/.gradle/
+mobile-android/build/
+mobile-android/app/build/
+mobile-android/local.properties
+mobile-android/local.config.properties
+mobile-android/app/src/main/java/generated/
+
+
+# =============================================================================
+# iOS
+# =============================================================================
+mobile-ios/*.xcodeproj/
+mobile-ios/*.xcworkspace/
+mobile-ios/Pods/
+mobile-ios/build/
+mobile-ios/DerivedData/
+mobile-ios/Generated/
+mobile-ios/Config/Debug.xcconfig
+mobile-ios/Config/Release.xcconfig
+
+
+# =============================================================================
+# Generated API clients
+# =============================================================================
+shared/generated/
+
+# =============================================================================
+# Generated wiki artifacts
+# =============================================================================
+knowledge/wiki/WIKI_REPORT.md
+
+
+# =============================================================================
+# Azure Infrastructure (generated credentials - never commit)
+# =============================================================================
+infra/azure/azure-config.env
+infra/azure/app-secrets.env
+infra/azure/*-credentials*.env
+infra/azure/postgres-password*.env
+infra/azure/log-analytics*.env
+infra/azure/container-apps-env*.env
+infra/azure/image-tags*.env
+infra/azure/azure-storage*.env
+infra/azure/backend-url*.env
+
+
+# =============================================================================
+# Docker
+# =============================================================================
+docker-compose.override.yml

@@ -1,0 +1,77 @@
+# iOS Build And Environments - TreasuryFlow
+
+## Tooling
+
+- XcodeGen generates the Xcode project from `project.yml`
+- Taskfile provides `mobile-ios:generate-project`, `mobile-ios:build`, `mobile-ios:test`, `mobile-ios:test-unit`, and `mobile-ios:test-ui`
+- iOS tasks are Mac-only and are guarded with `platforms: [darwin]`
+- Only the build and test tasks resolve a simulator ID from the available devices whose name exactly matches `SIMULATOR_NAME` before the UUID, defaulting to `iPhone 16`, before calling `xcodebuild`
+- When multiple exact-name simulators exist, the lookup uses the last available match reported by `simctl`, which is typically the newest installed runtime for that device name
+- Release automation lives in `fastlane/Fastfile` and CI, with `bundle exec fastlane beta` as the TestFlight-oriented path
+
+## Generated Project Settings
+
+- Deployment target: iOS 17.0
+- Swift version: 6.0
+- Xcode version: 26.0
+- Default bundle identifier: `com.mortitech.treasuryflow`
+- Debug runtime base URL: `http://localhost:8080/api/v1/`
+- Release runtime base URL placeholder: `https://api.example.com/api/v1/`
+
+## Commands
+
+```bash
+task mobile-ios:generate-project
+task mobile-ios:build
+task mobile-ios:test
+task mobile-ios:test-unit
+task mobile-ios:test-ui
+bundle exec fastlane beta
+```
+
+Equivalent direct build commands come from the Taskfile and use:
+
+- `xcodegen generate`
+- `xcodebuild build -project "TreasuryFlow.xcodeproj" -scheme "Treasuryflow" -destination "platform=iOS Simulator,id=<resolved simulator id>" -configuration Debug`
+- `xcodebuild test -project "TreasuryFlow.xcodeproj" -scheme "Treasuryflow" -destination "platform=iOS Simulator,id=<resolved simulator id>"`
+- `xcodebuild test -project "TreasuryFlow.xcodeproj" -scheme "Treasuryflow" -destination "platform=iOS Simulator,id=<resolved simulator id>" -only-testing:"TreasuryflowTests"`
+- `xcodebuild test -project "TreasuryFlow.xcodeproj" -scheme "Treasuryflow" -destination "platform=iOS Simulator,id=<resolved simulator id>" -only-testing:"TreasuryflowUITests"`
+- `xcodebuild archive -project "TreasuryFlow.xcodeproj" -scheme "Treasuryflow" -configuration Release -archivePath build/Treasuryflow.xcarchive`
+- `bundle exec fastlane beta`
+
+You can override the simulator lookup when needed:
+
+- `SIMULATOR_NAME="iPhone 17" task mobile-ios:build`
+- `SIMULATOR_NAME="iPhone 17" task mobile-ios:test`
+- `SIMULATOR_NAME="iPhone 17" task mobile-ios:test-ui`
+
+If no available simulator matches `SIMULATOR_NAME`, the build or test task exits with a lookup error before invoking `xcodebuild`.
+
+The generated project keeps `treasuryflow` for filesystem paths and uses `Treasuryflow` for the Swift/Xcode target and scheme.
+
+When `project.yml` changes structure rather than just source contents, regenerate before building. Typical triggers include new targets or schemes, Swift Packages, xcconfig wiring, entitlements, capabilities, resource bundles, or deployment-target changes.
+
+## UI Test Mode
+
+- The app includes a lightweight UI-test launch mode so generated XCUITests can verify flows without a live backend.
+- Generated UI tests launch the app with `UI_TEST_MODE=1` and an auth-state override such as `UI_TEST_AUTH_STATE=authenticated`.
+- In UI-test mode, the app swaps in deterministic repositories and seeds session state when requested.
+- Preserve stable accessibility identifiers on screen roots and key controls when changing UI that is covered by XCUITests.
+- The generated UI suite is intentionally smoke-level today; password-form automation is a known follow-up once SwiftUI exposes those controls more reliably to XCUITest.
+
+## Non-Mac Fallback
+
+- If you are not on Mac, you cannot run the generated iOS build or test tasks locally.
+- In that case, explicitly report which verification steps were skipped and defer real iOS validation to Mac CI or a Mac follow-up session.
+
+## Runtime Configuration
+
+- `project.yml` wires `Config/Debug.xcconfig` and `Config/Release.xcconfig` through XcodeGen `configFiles`.
+- `Info.plist` reads `$(API_BASE_URL)`.
+- `APIClient` defaults to the Info.plist value and falls back to `http://localhost:8080/api/v1/` if needed.
+- Update `Config/Release.xcconfig` before building a production or TestFlight release.
+
+## Current Scope
+
+- The template scaffolds a single app target plus unit-test and UI-test targets.
+- It does not scaffold multi-environment schemes or device-install workflows by default.

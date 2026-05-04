@@ -1,0 +1,30 @@
+---
+name: generate-clients
+description: Regenerate typed API clients from `shared/api-contracts/openapi.yml` after contract changes. Use when endpoints, schemas, enums, auth payloads, or API conventions change and downstream generated clients must stay in sync.
+---
+
+# Generate API Clients
+
+Use this skill after changing the OpenAPI contract or anything derived from it.
+
+This skill intentionally allows implicit invocation because it is deterministic code
+generation and verification, not a product-wiki lifecycle state transition.
+
+## Workflow
+
+1. Validate the contract with `task validate-api`.
+2. Run `task generate-clients`.
+3. Verify the generated output for the relevant platforms only:
+- `task backend:build`
+- `task web-user-app:build`
+- `task web-admin-portal:build`
+- `task mobile-android:build`
+- `task mobile-ios:build` (Mac only)
+
+4. If generation or verification fails, report the first blocking error and stop before hand-editing generated code.
+
+## Output
+
+- The platforms whose clients were regenerated
+- Whether validation and build verification passed
+- Any manual follow-up still required

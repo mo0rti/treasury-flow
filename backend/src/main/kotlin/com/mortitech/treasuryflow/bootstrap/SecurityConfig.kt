@@ -1,0 +1,50 @@
+package com.mortitech.treasuryflow.bootstrap
+
+import com.mortitech.treasuryflow.bootstrap.security.JwtAuthenticationFilter
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.core.env.Environment
+import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+
+@Configuration
+@EnableWebSecurity
+class SecurityConfig(
+    private val jwtAuthenticationFilter: JwtAuthenticationFilter,
+    private val environment: Environment
+) {
+
+    @Bean
+    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+        http
+            .csrf { it.disable() }
+            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            .authorizeHttpRequests { auth ->
+
+                auth.requestMatchers("/api/v1/auth/oauth/callback").permitAll()
+
+                auth.requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+                auth.requestMatchers("/api/v1/auth/refresh").permitAll()
+                auth.requestMatchers("/actuator/health").permitAll()
+                if (isSwaggerEnabled()) {
+                    auth.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                }
+                auth.anyRequest().authenticated()
+            }
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
+
+        return http.build()
+    }
+
+    @Bean
+    fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder(12)
+
+    private fun isSwaggerEnabled(): Boolean =
+        environment.getProperty("springdoc.api-docs.enabled", Boolean::class.java, false) ||
+            environment.getProperty("springdoc.swagger-ui.enabled", Boolean::class.java, false)
+}

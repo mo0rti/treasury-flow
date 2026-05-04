@@ -1,0 +1,7 @@
+package com.mortitech.treasuryflow.modules.auth.dto
+
+import jakarta.validation.constraints.NotBlank
+
+data class RefreshTokenRequest(
+    @field:NotBlank val refreshToken: String
+)

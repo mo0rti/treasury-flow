@@ -1,0 +1,189 @@
+version: '3'
+
+vars:
+  PROJECT_NAME: TreasuryFlow
+  OPENAPI_SPEC: ./shared/api-contracts/openapi.yml
+  OPENAPI_GENERATOR: openapi-generator-cli
+
+includes:
+
+  backend:
+    taskfile: ./backend/Taskfile.yml
+    dir: ./backend
+
+
+  web-user-app:
+    taskfile: ./web-user-app/Taskfile.yml
+    dir: ./web-user-app
+
+
+  web-admin-portal:
+    taskfile: ./web-admin-portal/Taskfile.yml
+    dir: ./web-admin-portal
+
+
+  mobile-android:
+    taskfile: ./mobile-android/Taskfile.yml
+    dir: ./mobile-android
+
+
+  mobile-ios:
+    taskfile: ./mobile-ios/Taskfile.yml
+    dir: ./mobile-ios
+
+
+tasks:
+  # ===========================================================================
+  # API Client Generation
+  # ===========================================================================
+  generate-clients:
+    desc: "Generate typed API clients from OpenAPI spec for all platforms"
+    cmds:
+      - cmd: "{{ .OPENAPI_GENERATOR }} validate -i {{ .OPENAPI_SPEC }}"
+
+      - task: generate-client-backend
+
+
+      - task: generate-client-typescript
+
+
+      - task: generate-client-mobile-android
+
+
+      - task: generate-client-mobile-ios
+
+    sources:
+      - "{{ .OPENAPI_SPEC }}"
+
+
+  generate-client-backend:
+    desc: "Generate Spring Boot server interfaces from OpenAPI"
+    internal: true
+    cmds:
+      - >
+        {{ .OPENAPI_GENERATOR }} generate
+        -i {{ .OPENAPI_SPEC }}
+        -g kotlin-spring
+        -o ./backend/src/generated
+        --additional-properties=interfaceOnly=true,useSpringBoot3=true,useTags=true
+        --package-name="com.mortitech.treasuryflow.api"
+
+
+
+  generate-client-typescript:
+    desc: "Generate TypeScript Axios client from OpenAPI"
+    internal: true
+    cmds:
+      - >
+        {{ .OPENAPI_GENERATOR }} generate
+        -i {{ .OPENAPI_SPEC }}
+        -g typescript-axios
+        -o ./shared/generated/typescript-client
+        --additional-properties=supportsES6=true,withSeparateModelsAndApi=true
+
+
+
+  generate-client-mobile-android:
+    desc: "Generate Kotlin Retrofit client from OpenAPI"
+    internal: true
+    cmds:
+      - >
+        {{ .OPENAPI_GENERATOR }} generate
+        -i {{ .OPENAPI_SPEC }}
+        -g kotlin
+        -o ./mobile-android/app/src/main/java/generated
+        --additional-properties=library=jvm-retrofit2,serializationLibrary=kotlinx_serialization
+        --package-name="com.mortitech.treasuryflow.api"
+
+
+
+  generate-client-mobile-ios:
+    desc: "Generate Swift URLSession client from OpenAPI"
+    internal: true
+    cmds:
+      - >
+        {{ .OPENAPI_GENERATOR }} generate
+        -i {{ .OPENAPI_SPEC }}
+        -g swift6
+        -o ./mobile-ios/Generated/APIClient
+        --additional-properties=library=urlsession,projectName=TreasuryflowAPI
+
+
+  # ===========================================================================
+  # Cross-Platform Commands
+  # ===========================================================================
+  lint:
+    desc: "Lint all platforms"
+    cmds:
+
+      - task: backend:lint
+
+
+      - task: web-user-app:lint
+
+
+      - task: web-admin-portal:lint
+
+
+      - task: mobile-android:lint
+
+
+  test:
+    desc: "Run tests for all platforms"
+    cmds:
+
+      - task: backend:test
+
+
+      - task: web-user-app:test
+
+
+      - task: web-admin-portal:test
+
+
+      - task: mobile-android:test
+
+
+  # ===========================================================================
+  # Utilities
+  # ===========================================================================
+  validate-api:
+    desc: "Validate OpenAPI spec"
+    cmds:
+      - "{{ .OPENAPI_GENERATOR }} validate -i {{ .OPENAPI_SPEC }}"
+
+
+  # ===========================================================================
+  # Infrastructure (Azure)
+  # ===========================================================================
+  infra:setup:
+    desc: "Run all Azure infrastructure setup scripts (first-time only)"
+    dir: ./infra/azure
+    cmds:
+      - bash 00-setup-resource-group.sh {{ .CLI_ARGS }}
+      - bash 01-setup-foundation.sh {{ .CLI_ARGS }}
+      - bash 02-setup-database.sh {{ .CLI_ARGS }}
+      - bash 03-setup-container-apps-env.sh {{ .CLI_ARGS }}
+      - bash 04-setup-storage.sh {{ .CLI_ARGS }}
+      - bash 05-build-and-push-images.sh {{ .CLI_ARGS }}
+      - bash 06-deploy-backend.sh {{ .CLI_ARGS }}
+      - bash 07-show-deployment-info.sh {{ .CLI_ARGS }}
+
+  infra:update-backend:
+    desc: "Rebuild and redeploy backend (zero-downtime)"
+    dir: ./infra/azure
+    cmds:
+      - bash update-backend.sh {{ .CLI_ARGS }}
+
+  infra:info:
+    desc: "Show deployment information"
+    dir: ./infra/azure
+    cmds:
+      - bash 07-show-deployment-info.sh {{ .CLI_ARGS }}
+
+  infra:check-secrets:
+    desc: "Validate all required secrets are configured"
+    dir: ./infra/azure
+    cmds:
+      - bash check-secrets.sh
+

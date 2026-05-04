@@ -1,0 +1,24 @@
+Document a data entity for TreasuryFlow.
+
+Ask me for the entity name and its fields if I haven't provided them.
+
+## Steps
+
+1. **Create Entity Doc** - Create `backend/docs/entities/{entity-name}.md` using the template at `backend/docs/entities/_template.md`. Fill in:
+   - Entity name and description
+   - All fields with types, constraints, and defaults
+   - Relationships to other entities
+   - Validation rules and business logic
+   - Database indexes
+
+2. **Update Architecture Doc** - If this is a new entity, add it to the entity list in `docs/architecture.md`.
+
+3. **Review Existing Features** - Check `knowledge/wiki/features/` for any feature wiki pages that reference this entity and update them if needed.
+
+## Template Reference
+
+See `backend/docs/entities/_template.md` for the expected format. Key sections:
+- **Fields**: name, type, nullable, default, constraints
+- **Relationships**: foreign keys, one-to-many, many-to-many
+- **Indexes**: performance-critical queries
+- **Business Rules**: validation, computed fields, lifecycle hooks

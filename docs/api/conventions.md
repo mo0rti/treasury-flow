@@ -1,0 +1,86 @@
+# API Conventions - TreasuryFlow
+
+## Base URL
+
+- **Local**: `http://localhost:8080/api/v1`
+- **Production**: `https://api.treasuryflow.com/api/v1` (Azure Container Apps)
+
+## General Rules
+
+1. **REST** with JSON request/response bodies
+2. **camelCase** for JSON field names
+3. **kebab-case** for URL paths when a resource name contains multiple words (for example, `/user-profiles`)
+4. **Plural nouns** for resource names (for example, `/transactions`, not `/transaction`)
+5. **UUID** for all entity IDs
+6. **ISO 8601** for dates (`2024-01-15T10:30:00Z`)
+
+## Authentication
+
+All endpoints except auth routes require a JWT Bearer token:
+
+```
+Authorization: Bearer <access-token>
+```
+
+## Pagination
+
+List endpoints return paginated responses:
+
+```json
+{
+  "content": [...],
+  "page": 0,
+  "size": 20,
+  "totalElements": 150,
+  "totalPages": 8
+}
+```
+
+Query parameters:
+- `page` (int, default: 0) - zero-based page number
+- `size` (int, default: 20, max: 100) - items per page
+- `sort` (string) - sort field and direction, e.g., `createdAt,desc`
+
+## Error Responses
+
+All errors follow this format:
+
+```json
+{
+  "code": "VALIDATION_ERROR",
+  "message": "Human-readable error message",
+  "details": {
+    "field": "email",
+    "reason": "must be a valid email address"
+  }
+}
+```
+
+### Error Codes
+
+| HTTP Status | Code | When |
+|-------------|------|------|
+| 400 | `VALIDATION_ERROR` | Request body or field validation fails |
+| 400 | `BAD_REQUEST`, `INVALID_REQUEST`, or domain-specific 400 code | Malformed JSON or business-rule request failures |
+| 401 | `UNAUTHORIZED`, `INVALID_CREDENTIALS`, `INVALID_REFRESH_TOKEN` | Missing token or authentication failure |
+| 403 | `FORBIDDEN` or domain-specific 403 code | Valid token but insufficient permissions |
+| 404 | `NOT_FOUND` or domain-specific 404 code | Resource does not exist or is not visible |
+| 409 | `CONFLICT`, `EMAIL_ALREADY_REGISTERED`, `OAUTH_ACCOUNT_LINK_REQUIRED` | Duplicate resource or account-linking conflict |
+| 500 | `INTERNAL_ERROR` | Unexpected server error |
+
+## Versioning
+
+API version is in the URL path: `/api/v1/...`
+
+New breaking changes increment the version. Non-breaking additions do not.
+
+This is valid in the current backend implementation. For example:
+
+- Auth controller: `/api/v1/auth`
+- Transaction controller: `/api/v1/transactions`
+
+## Related Docs
+
+- [Architecture Overview](../architecture.md) for platform boundaries and auth flow
+- [Backend Guide](../../backend/docs/guide.md) for exception, module, and migration conventions
+- [OpenAPI Contract](../../shared/api-contracts/openapi.yml) for the source-of-truth endpoint definitions

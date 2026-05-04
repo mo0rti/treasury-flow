@@ -1,0 +1,71 @@
+# Entity: User
+
+## Description
+Represents a registered user in the system. Users can always register with email and password, and may also be provisioned through Google, Apple OAuth, then authenticate with JWT-backed sessions.
+
+## Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| id | UUID | Yes | Primary key |
+| email | String | Yes | Email address (unique) |
+| displayName | String | Yes | User's display name |
+| avatarUrl | String | No | Profile picture URL |
+| authProvider | Enum | Yes | Provider recorded for the account (`LOCAL`, `GOOGLE`, `APPLE`, with additional enum placeholders reserved in code) |
+| providerId | String | No | Provider-specific subject/identity value for OAuth users |
+| passwordHash | String | No | BCrypt hash (only for password auth) |
+| role | Enum | Yes | User role: USER, ADMIN |
+| refreshTokenVersion | Integer | Yes | Session version counter used to rotate and invalidate refresh tokens |
+| createdAt | DateTime | Yes | Account creation timestamp |
+| updatedAt | DateTime | Yes | Last update timestamp |
+
+## Relationships
+
+- **has many** [Transaction](transaction.md) records through `transactions.created_by`
+
+## Validation Rules
+
+- `email`: must be valid email format, unique across all users
+- `displayName`: 1-100 characters
+- `authProvider`: defaults to `LOCAL` for password-based accounts
+- `passwordHash`: required for locally registered users and absent for pure OAuth users
+- `role`: defaults to USER, can only be changed by admins
+
+## Business Logic
+
+- Users are created on first successful authentication
+- OAuth login is rejected when the email already belongs to an existing account created through another sign-in method
+- Locally registered users authenticate with email/password and receive JWTs
+- Every successful login or refresh rotates the user's refresh-token version so older refresh tokens cannot be reused
+- The generated backend always enables local password auth and also supports Google, Apple OAuth callback exchange
+
+## Database
+
+- **Table name**: `users`
+- **Indexes**: unique on `email`, index on `auth_provider`
+- **Migrations**: `V1__users.sql`
+
+## API Exposure
+
+- `refreshTokenVersion`, `createdAt`, and `updatedAt` are persisted internal fields on the entity
+- `UserResponse` intentionally exposes only identity, profile, provider, and role fields
+- Do not add internal auth/session fields or audit timestamps to the public user DTO unless the API contract is updated first
+
+## API Representation
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "email": "user@example.com",
+  "displayName": "John Doe",
+  "avatarUrl": "https://example.com/avatar.jpg",
+  "authProvider": "LOCAL",
+  "role": "USER"
+}
+```
+
+## Related Docs
+
+- [Backend Entities Index](README.md) for the full entity set
+- [Transaction](transaction.md) for the related transaction domain
+- [Backend Guide](../guide.md) for backend structure and migration conventions

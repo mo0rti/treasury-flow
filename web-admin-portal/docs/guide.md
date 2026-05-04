@@ -1,0 +1,64 @@
+# Admin Web Portal Guide - TreasuryFlow
+
+## Purpose
+
+`web-admin-portal/` is the internal web interface for operators and staff. It should host:
+
+- administrative dashboards and monitoring
+- moderation and content-management workflows
+- user/support tooling
+- operations pages with filters, tables, and action dialogs
+
+## Scaffold Patterns
+
+- protected `/admin` route space
+- credentials-based sign-in for operators
+- persistent sidebar shell for management workflows
+- same-origin `/api/v1/*` proxy for backend calls
+- Cloudflare/OpenNext deployment structure
+
+## Suggested Structure
+
+```text
+app/
+├── admin/
+│   ├── (auth)/
+│   │   └── login/page.tsx
+│   └── (dashboard)/
+│       ├── layout.tsx
+│       ├── page.tsx
+│       ├── users/page.tsx
+│       └── content/page.tsx
+├── api/
+│   ├── auth/[...nextauth]/route.ts
+│   └── v1/[...path]/route.ts
+├── components/
+│   ├── layout/
+│   └── providers/
+└── lib/
+    ├── api/
+    └── config/
+```
+
+## Current Maturity
+
+- This scaffold gives you a coherent internal portal starting point.
+- It is intentionally lean compared with a fuller internal operations portal.
+- You should extend role checks, domain-specific pages, and operational workflows based on your product.
+
+## Commands
+
+```bash
+task web-admin-portal:install
+task web-admin-portal:dev
+task web-admin-portal:lint
+task web-admin-portal:typecheck
+task web-admin-portal:build
+task web-admin-portal:deploy
+```
+
+## Related Docs
+
+- [Architecture Overview](../../docs/architecture.md) for platform map and auth flow
+- [API Conventions](../../docs/api/conventions.md) for proxy and backend contract expectations
+- [Cloudflare Deployment](../../docs/deployment/cloudflare-setup.md) for preview and deploy setup

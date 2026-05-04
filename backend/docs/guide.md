@@ -1,0 +1,111 @@
+# Backend Guide - TreasuryFlow
+
+## Tech Stack
+
+- **Spring Boot 4.0.x** on **Kotlin 2.2+**, **Java 21**
+- **Jackson 3.x** for JSON serialization
+- **JUnit Jupiter 6** for testing
+- **Flyway** for database migrations
+- **SpringDoc** for OpenAPI documentation
+- **Spring Security** with OAuth2 Client + JWT
+
+## Project Structure
+
+```
+backend/src/main/kotlin/com/mortitech/treasuryflow/
+├── Application.kt                # @SpringBootApplication entry point
+├── bootstrap/
+│   ├── SecurityConfig.kt         # Spring Security + JWT filter
+│   ├── WebConfig.kt              # CORS configuration
+│   ├── OAuth2Config.kt           # RestTemplate for OAuth provider exchange
+│   ├── OpenApiConfig.kt          # Swagger / OpenAPI wiring
+│   └── properties/               # Typed config properties
+├── shared/
+│   ├── error/
+│   │   ├── ErrorCode.kt          # Typed backend error-code contract
+│   │   └── CommonErrorCode.kt    # Shared HTTP-level error codes
+│   ├── exception/
+│   │   ├── ApiException.kt       # Shared API exception base type
+│   │   ├── NotFoundException.kt  # Reusable built-in HTTP exception types
+│   │   └── GlobalExceptionHandler.kt
+│   ├── model/
+│   │   ├── ApiErrorResponse.kt   # { code, message, details }
+│   │   └── PagedResponse.kt      # Generic paginated response wrapper
+│   └── audit/
+│       └── AuditableEntity.kt    # Shared createdAt / updatedAt base class
+└── modules/
+    ├── auth/                     # Auth endpoints and user persistence
+    │   ├── controller/
+    │   ├── dto/
+    │   ├── error/
+    │   ├── model/
+    │   ├── repository/
+    │   └── service/
+    └── transactions/             # Transaction workflow module
+        ├── controller/
+        ├── dto/
+        ├── error/
+        ├── service/
+        ├── repository/
+        └── model/
+```
+
+## Local Run Prerequisites
+
+1. Start PostgreSQL from the generated project root with `docker compose up -d db`
+2. Run the backend with the `local` Spring profile
+3. For IntelliJ IDEA, set the active profile to `local`
+
+4. Real OAuth flows require replacing the placeholder provider credentials from `application-local.yml`
+
+
+## Conventions
+
+### Controllers
+- Return DTOs, never entities
+- Use `@Valid` for request body validation
+- Map exceptions in `GlobalExceptionHandler`
+
+### Services
+- Contain business logic and transaction boundaries (`@Transactional`)
+- Throw `ApiException` subclasses for business rule violations
+- Prefer typed module error codes over ad hoc string literals when raising API failures
+
+### Repositories
+- Extend `JpaRepository<Entity, UUID>`
+- Custom queries via `@Query` or Spring Data method naming
+
+### DTOs
+- Separate request and response DTOs
+- Use Kotlin data classes
+- Keep in the module `dto/` package, not alongside JPA entities
+
+### Migrations
+- Flyway SQL migrations in `resources/db/migration/`
+- Naming: `V{number}__{description}.sql`
+- Never modify existing migrations - create new ones
+
+### Testing
+- Use MockK-based unit tests as the default for service logic, domain rules, validation branches, and exception paths
+- Prefer constructor-injected mocks over Spring-backed unit test setup for pure business logic
+- Use `@SpringBootTest` + `@ActiveProfiles("test")` when the test genuinely needs the Spring context
+- Add `@AutoConfigureMockMvc` and `MockMvc` when verifying endpoint security, JWT filters, validation wiring, or exception-to-HTTP mapping
+- Use `@WebMvcTest` selectively for focused controller mapping or request-validation tests when the full security/filter chain is not the behavior under test
+- Use `@DataJpaTest` selectively for custom repository queries, entity mappings, and persistence behavior that should run against the real JPA slice
+- The current generated scaffold primarily uses MockK service tests and full Spring/MockMvc integration tests rather than MVC or JPA slice tests
+- Keep JUnit Jupiter 6 assertions throughout
+
+## Commands
+
+```bash
+task backend:run        # loads ../.env (fallback: ../.env.example) then ./gradlew bootRun
+task backend:build      # ./gradlew build
+task backend:test       # ./gradlew test
+task backend:lint       # ./gradlew check -x test
+```
+
+## Related Docs
+
+- [Architecture Overview](../../docs/architecture.md) for system-wide constraints and auth flow
+- [API Conventions](../../docs/api/conventions.md) for URL, error, and versioning rules
+- [Backend Entities](entities/README.md) for domain-level data documentation

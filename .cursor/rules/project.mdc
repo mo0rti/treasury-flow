@@ -1,0 +1,56 @@
+---
+alwaysApply: true
+---
+
+# TreasuryFlow
+
+A finance operations platform for payout approvals, settlements, and transaction oversight
+
+## Architecture
+
+Monorepo, MVVM on all platforms, API-first (OpenAPI -> typed clients).
+
+- **Backend**: Spring Boot 4, Kotlin 2.2+, Java 21 - Azure Container Apps
+- **Web User App**: Next.js + TypeScript - Cloudflare Workers via OpenNext
+- **Web Admin Portal**: Next.js + TypeScript - Cloudflare Workers via OpenNext
+- **Android**: Kotlin + Jetpack Compose, Hilt, Retrofit 3, Room
+- **iOS**: Swift 6 + SwiftUI, async/await, Keychain, SwiftData (Mac/Xcode only)
+
+## Key Conventions
+
+- API-first: define in `shared/api-contracts/openapi.yml` -> generate clients -> implement
+- MVVM: one ViewModel per screen, sealed UiState/ViewState enum
+- Repositories: concrete classes by default; add interfaces/protocols only when multiple
+  implementations are genuinely needed
+- Feature wiki pages in `knowledge/wiki/features/` — single source of truth for what to build
+- Entity docs in `backend/docs/entities/`
+- Auth: JWT tokens, OAuth (password, google, apple)
+
+## Product Wiki
+
+Read wiki pages before implementing. Check `knowledge/wiki/index.md` first.
+
+- `knowledge/wiki/index.md` - feature status board
+- `knowledge/wiki/features/` - feature specs
+- `knowledge/wiki/advisory/BOARD.md` - advisory board personas
+- `knowledge/wiki/platform-requirements/` - platform-specific implementation notes
+- `knowledge/wiki/business-rules/` - cross-cutting constraints
+
+**Do not implement features without a wiki page.** Ask the user to run `po-intake` first.
+
+## Commands
+
+- `task generate-clients` - regenerate typed API clients
+- `task backend:run` / `task backend:test`
+- `task web-user-app:dev`
+- `task web-admin-portal:dev`
+- `task mobile-android:build` / `task mobile-android:test`
+- `task mobile-ios:build` / `task mobile-ios:test` (Mac only)
+
+## Documentation
+
+- `docs/architecture.md` - system overview
+- `docs/api/conventions.md` - API patterns
+- `backend/docs/entities/` - entity definitions
+- `backend/docs/azure-setup.md` - Azure deployment
+

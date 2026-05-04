@@ -1,0 +1,23 @@
+package com.mortitech.treasuryflow.shared.exception
+
+import com.mortitech.treasuryflow.shared.error.CommonErrorCode
+import com.mortitech.treasuryflow.shared.error.ErrorCode
+import org.springframework.http.HttpStatus
+
+/**
+ * HTTP 403 wrapper around a typed [ErrorCode].
+ *
+ * The guard keeps the wrapper type and supplied error code aligned so callers
+ * cannot accidentally return a non-403 error through this exception.
+ */
+class ForbiddenException(
+    errorCode: ErrorCode = CommonErrorCode.FORBIDDEN,
+    message: String = errorCode.defaultMessage,
+    details: Map<String, Any>? = null
+) : ApiException(errorCode, message, details) {
+    init {
+        require(errorCode.httpStatus == HttpStatus.FORBIDDEN) {
+            "ForbiddenException requires a FORBIDDEN error code, got ${errorCode.code} (${errorCode.httpStatus})"
+        }
+    }
+}

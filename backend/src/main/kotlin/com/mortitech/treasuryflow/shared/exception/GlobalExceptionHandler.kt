@@ -1,0 +1,58 @@
+package com.mortitech.treasuryflow.shared.exception
+
+import com.mortitech.treasuryflow.shared.error.CommonErrorCode
+import com.mortitech.treasuryflow.shared.model.ApiErrorResponse
+import org.slf4j.LoggerFactory
+import org.springframework.http.ResponseEntity
+import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.bind.annotation.RestControllerAdvice
+
+@RestControllerAdvice
+class GlobalExceptionHandler {
+
+    private val log = LoggerFactory.getLogger(javaClass)
+
+    @ExceptionHandler(ApiException::class)
+    fun handleApiException(ex: ApiException): ResponseEntity<ApiErrorResponse> {
+        log.warn("API error: {} - {}", ex.code, ex.message)
+        return ResponseEntity
+            .status(ex.status)
+            .body(ApiErrorResponse(code = ex.code, message = ex.message, details = ex.details))
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException::class)
+    fun handleValidation(ex: MethodArgumentNotValidException): ResponseEntity<ApiErrorResponse> {
+        val details = ex.bindingResult.fieldErrors.associate { it.field to (it.defaultMessage ?: "invalid") }
+        return ResponseEntity
+            .status(CommonErrorCode.VALIDATION_ERROR.httpStatus)
+            .body(ApiErrorResponse(
+                code = CommonErrorCode.VALIDATION_ERROR.code,
+                message = CommonErrorCode.VALIDATION_ERROR.defaultMessage,
+                details = details
+            ))
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException::class)
+    fun handleUnreadableMessage(ex: HttpMessageNotReadableException): ResponseEntity<ApiErrorResponse> {
+        log.debug("Request body could not be read", ex)
+        return ResponseEntity
+            .status(CommonErrorCode.INVALID_REQUEST.httpStatus)
+            .body(ApiErrorResponse(
+                code = CommonErrorCode.INVALID_REQUEST.code,
+                message = CommonErrorCode.INVALID_REQUEST.defaultMessage
+            ))
+    }
+
+    @ExceptionHandler(Exception::class)
+    fun handleGeneric(ex: Exception): ResponseEntity<ApiErrorResponse> {
+        log.error("Unhandled exception", ex)
+        return ResponseEntity
+            .status(CommonErrorCode.INTERNAL_ERROR.httpStatus)
+            .body(ApiErrorResponse(
+                code = CommonErrorCode.INTERNAL_ERROR.code,
+                message = CommonErrorCode.INTERNAL_ERROR.defaultMessage
+            ))
+    }
+}

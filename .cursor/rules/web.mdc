@@ -1,0 +1,47 @@
+---
+globs: "web-user-app/**,web-admin-portal/**"
+---
+
+# Web & Admin - Next.js + TypeScript
+
+## Stack
+- Next.js (App Router), TypeScript, Tailwind CSS
+- Cloudflare Workers deployment via OpenNext
+- Fetch-based API helpers and NextAuth route handlers
+
+## Structure (web-user-app/ and web-admin-portal/)
+```
+app/                -> App Router pages, layouts, and route handlers
+components/         -> Reusable UI and layout components
+lib/api/            -> Fetch helpers for `/api/v1`
+lib/config/         -> Route and runtime config helpers
+types/              -> NextAuth and other shared TypeScript types
+auth.ts             -> NextAuth configuration
+middleware.ts       -> Locale/auth middleware when present
+wrangler.jsonc      -> Cloudflare Workers runtime config
+open-next.config.ts -> OpenNext Cloudflare adapter config
+```
+
+## Admin Additions
+- Sidebar layout with navigation
+- Data tables with pagination
+- Admin role guard (wraps ProtectedRoute)
+- Stats/dashboard cards
+
+## Patterns
+- Server Components by default, `"use client"` only when needed
+- Auth: NextAuth route handlers with OAuth and/or credentials
+- API calls proxy through `/api/v1/[...path]` with `fetch`
+- `npm run preview` is the Cloudflare-aware local production check
+- Keep secrets in Cloudflare Worker secrets, not `wrangler.jsonc`
+- Tailwind for styling and shared design patterns
+
+## Commands
+- `npm run dev` or `task web-user-app:dev`
+- `npm run build` or `task web-user-app:build`
+- `npm run build:cloudflare` for the OpenNext worker bundle
+- `npm run preview` for Wrangler/workerd preview
+- `npm run deploy` or `task web-user-app:deploy`
+- `task web-admin-portal:dev`
+- `task web-admin-portal:build`
+- `task web-admin-portal:deploy`

@@ -1,0 +1,51 @@
+package com.mortitech.treasuryflow.core.session
+
+import com.mortitech.treasuryflow.core.datastore.TokenStorage
+import com.mortitech.treasuryflow.core.model.AuthState
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class SessionManagerTest {
+
+    private val hasTokenFlow = MutableStateFlow(false)
+    private val tokenStorage = mockk<TokenStorage>(relaxed = true) {
+        every { hasToken } returns hasTokenFlow
+    }
+
+    private fun createSessionManager(scope: TestScope): SessionManager {
+        return SessionManager(tokenStorage, scope.backgroundScope)
+    }
+
+    @Test
+    fun `initial state is unauthenticated when no token`() = runTest(UnconfinedTestDispatcher()) {
+        val sessionManager = createSessionManager(this)
+        assertTrue(sessionManager.authState.value is AuthState.Unauthenticated)
+    }
+
+    @Test
+    fun `state becomes authenticated when token exists`() = runTest(UnconfinedTestDispatcher()) {
+        val sessionManager = createSessionManager(this)
+        hasTokenFlow.value = true
+        assertTrue(sessionManager.authState.value == AuthState.Authenticated)
+    }
+
+    @Test
+    fun `logout clears tokens`() = runTest(UnconfinedTestDispatcher()) {
+        val sessionManager = createSessionManager(this)
+        hasTokenFlow.value = true
+
+        sessionManager.onLogout()
+
+        coVerify { tokenStorage.clearTokens() }
+    }
+}

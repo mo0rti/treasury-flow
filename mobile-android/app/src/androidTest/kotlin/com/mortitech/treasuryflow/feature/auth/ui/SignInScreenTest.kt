@@ -1,0 +1,86 @@
+package com.mortitech.treasuryflow.feature.auth.ui
+
+import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performTextInput
+import com.mortitech.treasuryflow.R
+import com.mortitech.treasuryflow.designsystem.text.UiText
+import com.mortitech.treasuryflow.designsystem.theme.AppTheme
+import org.junit.Rule
+import org.junit.Test
+
+class SignInScreenTest {
+
+    @get:Rule
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+
+    @Test
+    fun `shows error message when ui state is error`() {
+        composeRule.setContent {
+            AppTheme {
+                SignInScreen(
+                    uiState = SignInUiState.Error(UiText.DynamicString("Bad credentials")),
+                    email = "",
+                    password = "",
+                    onEmailChange = {},
+                    onPasswordChange = {},
+                    onSignInWithPassword = {},
+                    showBackToSocial = false,
+                    onBackToSocial = {},
+                    onDismissError = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Bad credentials").assertIsDisplayed()
+    }
+
+    @Test
+    fun `password sign in button enables when both fields are filled`() {
+        composeRule.setContent {
+            AppTheme {
+                var email by remember { mutableStateOf("") }
+                var password by remember { mutableStateOf("") }
+
+                SignInScreen(
+                    uiState = SignInUiState.Idle,
+                    email = email,
+                    password = password,
+                    onEmailChange = { email = it },
+                    onPasswordChange = { password = it },
+                    onSignInWithPassword = {},
+                    showBackToSocial = false,
+                    onBackToSocial = {},
+                    onDismissError = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText(
+            composeRule.activity.getString(R.string.auth_sign_in),
+        ).assertIsNotEnabled()
+
+        composeRule.onNode(
+            hasSetTextAction() and hasText(composeRule.activity.getString(R.string.auth_email_label)),
+        ).performTextInput("test@example.com")
+        composeRule.onNode(
+            hasSetTextAction() and hasText(composeRule.activity.getString(R.string.auth_password_label)),
+        ).performTextInput("password123")
+
+        composeRule.onNodeWithText(
+            composeRule.activity.getString(R.string.auth_sign_in),
+        ).assertIsEnabled()
+    }
+
+}

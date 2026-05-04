@@ -1,0 +1,22 @@
+app:
+  jwt:
+    secret: local-jwt-secret-for-first-run-only-keep-real-secrets-in-env
+  oauth:
+google:
+      client-id: local-google-client-id
+      client-secret: local-google-client-secret
+      token-uri: https://oauth2.googleapis.com/token
+      user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+apple:
+      client-id: local-apple-client-id
+      team-id: local-apple-team-id
+      key-id: local-apple-key-id
+      private-key: local-apple-private-key
+      token-uri: https://appleid.apple.com/auth/token
+
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

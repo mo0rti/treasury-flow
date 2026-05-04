@@ -1,0 +1,11 @@
+package com.mortitech.treasuryflow.core.model
+
+data class PagedData<T>(
+    val content: List<T>,
+    val page: Int,
+    val size: Int,
+    val totalElements: Long,
+    val totalPages: Int,
+) {
+    val hasNextPage: Boolean get() = page < totalPages - 1
+}

@@ -1,0 +1,16 @@
+package com.mortitech.treasuryflow.feature.welcome.ui
+
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
+
+data class WelcomePage(
+    @param:DrawableRes
+    @field:DrawableRes
+    val illustrationResId: Int,
+    @param:StringRes
+    @field:StringRes
+    val titleResId: Int,
+    @param:StringRes
+    @field:StringRes
+    val descriptionResId: Int,
+)

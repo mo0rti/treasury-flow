@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "treasuryflow-web-user-app",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-03-26",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "upload_source_maps": true,
+  // Uncomment if the Worker spends most of its time talking to one backend region.
+  // "placement": {
+  //   "mode": "smart"
+  // },
+  // Use vars for non-sensitive runtime config. Put secrets such as AUTH_SECRET and
+  // provider client secrets in Cloudflare Worker secrets via `wrangler secret put`.
+  "vars": {
+    "NODE_ENV": "production",
+    "API_BASE_URL": "https://api.treasuryflow.com",
+    "NEXT_PUBLIC_API_BASE_URL": "https://api.treasuryflow.com",
+    "AUTH_URL": "https://app.treasuryflow.com",
+    "AUTH_TRUST_HOST": "true",
+    "AUTH_GOOGLE_ID": "your-google-client-id",
+    "AUTH_APPLE_ID": "your-apple-service-id"
+  }
+}

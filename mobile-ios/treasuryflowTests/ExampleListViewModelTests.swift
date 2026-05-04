@@ -1,0 +1,117 @@
+import XCTest
+@testable import Treasuryflow
+
+final class ExampleListViewModelTests: XCTestCase {
+    @MainActor
+    private func makeSUT() -> (
+        viewModel: ExampleListViewModel,
+        exampleRepository: MockExampleRepository,
+        authRepository: MockAuthRepository
+    ) {
+        let exampleRepository = MockExampleRepository()
+        let authRepository = MockAuthRepository()
+        let viewModel = ExampleListViewModel(
+            exampleRepository: exampleRepository,
+            authRepository: authRepository
+        )
+        return (viewModel, exampleRepository, authRepository)
+    }
+
+    @MainActor
+    func testLoadExamplesSuccess() async {
+        let (viewModel, mockExampleRepository, _) = makeSUT()
+        mockExampleRepository.listResult = .success(MockData.exampleListResponse)
+
+        await viewModel.loadExamples()
+
+        XCTAssertEqual(viewModel.viewState, .success)
+        XCTAssertEqual(viewModel.examples.count, 2)
+        XCTAssertEqual(viewModel.examples[0].title, "Example 1")
+    }
+
+    @MainActor
+    func testLoadExamplesFailure() async {
+        let (viewModel, mockExampleRepository, _) = makeSUT()
+        mockExampleRepository.listResult = .failure(APIError.networkError(URLError(.notConnectedToInternet)))
+
+        await viewModel.loadExamples()
+
+        if case .error = viewModel.viewState {
+            // Expected
+        } else {
+            XCTFail("Expected error state")
+        }
+    }
+
+    @MainActor
+    func testDeleteRemovesFromList() async {
+        let (viewModel, mockExampleRepository, _) = makeSUT()
+        mockExampleRepository.listResult = .success(MockData.exampleListResponse)
+        await viewModel.loadExamples()
+
+        await viewModel.deleteExample("1")
+
+        XCTAssertEqual(viewModel.examples.count, 1)
+        XCTAssertEqual(viewModel.examples[0].id, "2")
+    }
+}
+
+// MARK: - Mocks
+
+@MainActor
+private final class MockExampleRepository: ExampleRepository {
+    var listResult: Result<ExampleListResponse, Error> = .success(MockData.exampleListResponse)
+
+    func list(page: Int, size: Int) async throws -> ExampleListResponse {
+        try listResult.get()
+    }
+
+    func getById(_ id: String) async throws -> ExampleResponse {
+        MockData.exampleListResponse.content.first { $0.id == id }!
+    }
+
+    func create(title: String, description: String?) async throws -> ExampleResponse {
+        ExampleResponse(id: "new", title: title, description: description, status: "DRAFT", createdBy: "user-1", createdAt: "2025-01-01", updatedAt: "2025-01-01")
+    }
+
+    func update(id: String, title: String?, description: String?, status: String?) async throws -> ExampleResponse {
+        ExampleResponse(id: id, title: title ?? "Updated", description: description, status: status ?? "DRAFT", createdBy: "user-1", createdAt: "2025-01-01", updatedAt: "2025-01-01")
+    }
+
+    func delete(_ id: String) async throws {}
+}
+
+@MainActor
+private final class MockAuthRepository: AuthRepository {
+    func oauthCallback(provider: String, code: String, redirectUri: String) async throws -> AuthResponse {
+        throw APIError.unauthorized
+    }
+
+    func register(email: String, password: String, displayName: String) async throws -> AuthResponse {
+        throw APIError.unauthorized
+    }
+    func login(email: String, password: String) async throws -> AuthResponse {
+        throw APIError.unauthorized
+    }
+
+    func refreshToken() async throws -> AuthResponse {
+        throw APIError.unauthorized
+    }
+    func getCurrentUser() async throws -> UserResponse {
+        UserResponse(id: "user-1", email: "test@example.com", displayName: "Test", avatarUrl: nil, authProvider: "LOCAL", role: "USER")
+    }
+    func logout() async {}
+}
+
+private enum MockData {
+    static let exampleListResponse = ExampleListResponse(
+        content: [
+            ExampleResponse(id: "1", title: "Example 1", description: "Desc 1", status: "PUBLISHED", createdBy: "user-1", createdAt: "2025-01-01", updatedAt: "2025-01-01"),
+            ExampleResponse(id: "2", title: "Example 2", description: nil, status: "DRAFT", createdBy: "user-1", createdAt: "2025-01-02", updatedAt: "2025-01-02")
+        ],
+        page: 0,
+        size: 20,
+        totalElements: 2,
+        totalPages: 1
+    )
+}

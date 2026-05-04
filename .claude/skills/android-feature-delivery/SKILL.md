@@ -1,0 +1,69 @@
+---
+name: android-feature-delivery
+description: Cross-layer feature orchestration for Android. Use when a task spans multiple layers and needs scoped planning, companion-skill selection, validation, and documentation updates across DTOs, APIs, repositories, ViewModels, Compose UI, navigation, resources, and docs.
+argument-hint: [feature-description]
+disable-model-invocation: true
+---
+
+# Android Feature Delivery
+
+Use this skill to coordinate non-trivial feature work that crosses layers.
+Invoke it explicitly with `/android-feature-delivery <feature-description>` when you want the full feature workflow applied.
+
+## Role boundary
+
+- Use this skill as the delivery checklist and orchestration layer for multi-step work.
+- Pull in companion skills for detailed rules instead of restating repository, contract, UI, or verification conventions here.
+
+## Request
+
+$ARGUMENTS
+
+## 1. Research the current shape
+
+- Inspect the surrounding feature under `feature/`, plus shared code in `designsystem/`, `core/`, and `navigation/`.
+- Read only the docs needed for the task, starting with `mobile-android/docs/conventions-and-workflow.md` and `mobile-android/docs/architecture.md`.
+- Reuse nearby patterns before inventing a new one.
+
+## 2. Verify external contracts
+
+- Cross-check the OpenAPI spec in `shared/api-contracts/openapi.yml` when endpoints, DTOs, or enums are involved.
+- Cross-check the backend in `backend/` when behavior or response shapes need confirmation.
+
+## 3. Map affected layers
+
+Cover only the layers the feature truly needs:
+
+- DTOs and enums
+- Retrofit API and network service
+- Repository updates
+- ViewModel state, events, and intent methods
+- Compose screens and shared components
+- Navigation routes and callbacks
+- Resources such as strings, icons, or drawables
+- Documentation updates in `mobile-android/docs/`
+
+## 4. Load the right companion skills
+
+- Use `android-conventions` for repository-wide MVVM, DI, navigation, string, and doc-sync rules.
+- Use `android-contract-alignment` for DTO, enum, Retrofit, and auth-boundary decisions.
+- Use `compose-design-system` for shared UI language, reusable Compose primitives, and screen-level pattern reuse.
+- Use `android-testing` for Compose UI test patterns, ViewModel coroutine testing, and Hilt-aware instrumentation setup.
+- Use `android-build-verify` to choose the smallest trustworthy Gradle validation.
+
+## 5. Execute and close out
+
+- Implement only the layers the feature actually touches.
+- If ViewModel or repository logic is added or changed, add at least one targeted unit test and confirm it passes with `./gradlew testDebugUnitTest` (or `gradlew.bat testDebugUnitTest` on Windows) before close-out.
+- If UI or a new Activity is added or changed, confirm `enableEdgeToEdge()` is called in the owning activity, `Scaffold` insets are handled through its `PaddingValues`, and accessibility semantics, touch targets, and text-scale resilience are still correct before close-out.
+- If resources, manifests, or accessibility-sensitive UI change, include `lintDebug` or a stronger validation task from `android-build-verify`.
+- Run at least `./gradlew compileDebugKotlin` (or `gradlew.bat` on Windows), plus stronger targeted verification when the change crosses logic, packaging, or integration boundaries.
+- Update any affected docs in `mobile-android/docs/` in the same session.
+
+## Companion skills
+
+- `android-conventions`
+- `android-contract-alignment`
+- `compose-design-system`
+- `android-testing`
+- `android-build-verify`

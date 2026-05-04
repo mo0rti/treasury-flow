@@ -1,0 +1,42 @@
+# iOS Networking And Auth - TreasuryFlow
+
+## Networking Stack
+
+- `APIEndpoint` defines path, method, and auth requirement.
+- `APIClient` is an actor that performs JSON requests with `URLSession`.
+- `APIClient.request<T>` decodes JSON responses.
+- `APIClient.requestVoid` handles successful empty responses.
+- `APIError` maps common transport and HTTP failure cases.
+
+## Contract Source Of Truth
+
+- [shared/api-contracts/openapi.yml](../../shared/api-contracts/openapi.yml) is the primary reference for endpoint paths, payloads, enums, and auth behavior.
+- `backend/` is the secondary reference when the spec needs implementation clarification.
+
+
+## Auth Flow
+
+- `TokenStorage` stores access and refresh tokens in Keychain.
+- `APIClient` reads the access token from `TokenStorage` and adds the `Authorization` header when an endpoint requires auth.
+- `AuthRepository` owns login, refresh, current-user, and logout flows.
+- Enabled auth methods in this generated project:
+  - Email and password
+  - Google OAuth
+  - Apple Sign-In
+
+
+## Current Behavior
+
+- The base URL already includes `/api/v1`.
+- Endpoint paths in `APIEndpoint` append to that base URL and therefore start with feature-relative paths like `/auth/...` or `/examples/...`.
+- The default baseline for `APIError.unauthorized` is to clear stored tokens and return the app to login flow.
+- That return-to-login transition should be driven by the app-level auth gate in `AppRouter`, not by ad hoc per-screen navigation logic.
+- `AuthRepository.refreshToken()` exists as an extension point, but `APIClient` does not perform automatic refresh-and-retry orchestration by default.
+- If a project later adds refresh-and-retry, keep that behavior centralized at the transport boundary instead of scattering retry logic across features.
+- A correct refresh implementation must coordinate concurrent 401 responses so only one refresh is in flight at a time and peer requests await that result instead of starting their own refresh attempts.
+- Client error flow should stay consistent: `APIClient` maps transport and HTTP failures, repositories translate only when needed, ViewModels map errors into view state, and views render shared loading or error patterns.
+
+## Privacy Manifest Reminder
+
+- The minimal scaffold does not include `PrivacyInfo.xcprivacy` yet.
+- If the app starts using covered required-reason APIs, persistent storage patterns such as `UserDefaults`, file-system access, or third-party SDKs with privacy declarations, add or update the privacy manifest as part of the same change.

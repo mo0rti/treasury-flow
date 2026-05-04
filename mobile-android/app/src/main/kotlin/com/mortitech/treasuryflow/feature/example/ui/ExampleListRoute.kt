@@ -1,0 +1,21 @@
+package com.mortitech.treasuryflow.feature.example.ui
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
+@Composable
+fun ExampleListRoute(
+    viewModel: ExampleListViewModel = hiltViewModel(),
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    ExampleListScreen(
+        uiState = uiState,
+        onLoadMore = viewModel::loadMore,
+        onDelete = viewModel::deleteExample,
+        onLogout = viewModel::logout,
+        onRetry = viewModel::loadExamples,
+    )
+}

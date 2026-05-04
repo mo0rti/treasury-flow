@@ -1,0 +1,38 @@
+package com.mortitech.treasuryflow.core.session
+
+import com.mortitech.treasuryflow.core.model.AuthState
+import com.mortitech.treasuryflow.core.datastore.TokenStorage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class SessionManager @Inject constructor(
+    private val tokenStorage: TokenStorage,
+    private val scope: CoroutineScope,
+) {
+
+    private val _authState = MutableStateFlow<AuthState>(AuthState.Loading)
+    val authState: StateFlow<AuthState> = _authState.asStateFlow()
+
+    init {
+        tokenStorage.hasToken
+            .onEach { hasToken ->
+                _authState.value = if (hasToken) {
+                    AuthState.Authenticated
+                } else {
+                    AuthState.Unauthenticated
+                }
+            }
+            .launchIn(scope)
+    }
+
+    suspend fun onLogout() {
+        tokenStorage.clearTokens()
+    }
+}

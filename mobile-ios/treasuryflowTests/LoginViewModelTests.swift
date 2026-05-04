@@ -1,0 +1,128 @@
+import XCTest
+@testable import Treasuryflow
+
+final class LoginViewModelTests: XCTestCase {
+    @MainActor
+    private func makeSUT() -> (viewModel: LoginViewModel, authRepository: MockAuthRepository) {
+        let authRepository = MockAuthRepository()
+        let viewModel = LoginViewModel(authRepository: authRepository)
+        return (viewModel, authRepository)
+    }
+
+    @MainActor
+    func testInitialStateIsIdle() {
+        let (viewModel, _) = makeSUT()
+        XCTAssertEqual(viewModel.viewState, .idle)
+    }
+
+
+    @MainActor
+    func testLoginWithPasswordSuccess() async {
+        let (viewModel, mockAuthRepository) = makeSUT()
+        mockAuthRepository.loginResult = .success(MockData.authResponse)
+
+        await viewModel.loginWithPassword()
+
+        XCTAssertEqual(viewModel.viewState, .success)
+    }
+
+    @MainActor
+    func testLoginWithPasswordFailure() async {
+        let (viewModel, mockAuthRepository) = makeSUT()
+        mockAuthRepository.loginResult = .failure(APIError.unauthorized)
+
+        viewModel.email = "test@example.com"
+        viewModel.password = "wrong"
+        await viewModel.loginWithPassword()
+
+        if case .error(let message) = viewModel.viewState {
+            XCTAssertFalse(message.isEmpty)
+        } else {
+            XCTFail("Expected error state")
+        }
+    }
+
+    @MainActor
+    func testFormValidation() {
+        let (viewModel, _) = makeSUT()
+        XCTAssertFalse(viewModel.isFormValid)
+
+        viewModel.email = "test@example.com"
+        XCTAssertFalse(viewModel.isFormValid)
+
+        viewModel.password = "password"
+        XCTAssertTrue(viewModel.isFormValid)
+    }
+
+
+    @MainActor
+    func testOAuthLoginSuccess() async {
+        let (viewModel, mockAuthRepository) = makeSUT()
+        mockAuthRepository.oauthResult = .success(MockData.authResponse)
+
+        await viewModel.loginWithOAuth(provider: "google", code: "auth-code", redirectUri: "redirect")
+
+        XCTAssertEqual(viewModel.viewState, .success)
+    }
+
+    @MainActor
+    func testClearError() {
+        let (viewModel, _) = makeSUT()
+        viewModel.viewState = .error("some error")
+        viewModel.clearError()
+        XCTAssertEqual(viewModel.viewState, .idle)
+    }
+}
+
+// MARK: - Mocks
+
+@MainActor
+private final class MockAuthRepository: AuthRepository {
+    var oauthResult: Result<AuthResponse, Error> = .failure(APIError.unauthorized)
+
+    var loginResult: Result<AuthResponse, Error> = .failure(APIError.unauthorized)
+    var registerResult: Result<AuthResponse, Error> = .failure(APIError.unauthorized)
+
+
+    func oauthCallback(provider: String, code: String, redirectUri: String) async throws -> AuthResponse {
+        try oauthResult.get()
+    }
+
+
+    func register(email: String, password: String, displayName: String) async throws -> AuthResponse {
+        try registerResult.get()
+    }
+
+    func login(email: String, password: String) async throws -> AuthResponse {
+        try loginResult.get()
+    }
+
+
+    func refreshToken() async throws -> AuthResponse {
+        throw APIError.unauthorized
+    }
+
+    func getCurrentUser() async throws -> UserResponse {
+        MockData.userResponse
+    }
+
+    func logout() async {}
+}
+
+private enum MockData {
+    static let userResponse = UserResponse(
+        id: "user-id",
+        email: "test@example.com",
+        displayName: "Test User",
+        avatarUrl: nil,
+        authProvider: "LOCAL",
+        role: "USER"
+    )
+
+    static let authResponse = AuthResponse(
+        accessToken: "access-token",
+        refreshToken: "refresh-token",
+        expiresIn: 3600,
+        user: userResponse
+    )
+}

@@ -1,0 +1,34 @@
+import Foundation
+import Observation
+
+@Observable
+final class DependencyContainer {
+    let apiClient: APIClient
+    let tokenStorage: TokenStorage
+    let authRepository: AuthRepository
+    let exampleRepository: ExampleRepository
+
+    init() {
+        if let uiTestConfiguration = UITestConfiguration.current {
+            let tokenStorage = TokenStorage(
+                service: "com.mortitech.treasuryflow.auth.ui-tests",
+                resetOnInit: true,
+                seededTokens: uiTestConfiguration.seededTokens
+            )
+            let apiClient = APIClient(tokenStorage: tokenStorage)
+
+            self.tokenStorage = tokenStorage
+            self.apiClient = apiClient
+            self.authRepository = UITestAuthRepository(tokenStorage: tokenStorage)
+            self.exampleRepository = UITestExampleRepository()
+        } else {
+            let tokenStorage = TokenStorage()
+            let apiClient = APIClient(tokenStorage: tokenStorage)
+
+            self.tokenStorage = tokenStorage
+            self.apiClient = apiClient
+            self.authRepository = AuthRepositoryImpl(apiClient: apiClient, tokenStorage: tokenStorage)
+            self.exampleRepository = ExampleRepositoryImpl(apiClient: apiClient)
+        }
+    }
+}

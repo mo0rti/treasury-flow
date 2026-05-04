@@ -1,0 +1,241 @@
+---
+name: jpa-kotlin-patterns
+description: JPA / Kotlin Entity Patterns. Use when creating or modifying entities, relationships, repositories, or working with Hibernate and PostgreSQL.
+---
+
+# JPA / Kotlin Entity Patterns (TreasuryFlow Backend)
+
+Entity, repository, and Hibernate patterns for this **Spring Boot 4 + Kotlin + PostgreSQL** project.
+
+## Standard Entity Patterns
+
+Business fields live in the **constructor** and entities extend `AuditableEntity()`.
+
+Use one of these two ID patterns consistently:
+
+1. **Generated ID entities**: `@Id lateinit var id: UUID` in the class body
+2. **Application-assigned ID entities**: `@Id val id: UUID = UUID.randomUUID()` in the constructor when the application owns identity creation, such as the generated `User` entity
+
+Application-assigned IDs should look like this:
+
+```kotlin
+@Entity
+@Table(name = "users")
+class User(
+    @Id
+    val id: UUID = UUID.randomUUID(),
+    var email: String,
+) : AuditableEntity()
+```
+
+```kotlin
+@Entity
+@Table(name = "some_table")
+class SomeEntity(
+    var name: String,
+    var description: String? = null,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    var owner: User,
+) : AuditableEntity() {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(columnDefinition = "uuid")
+    lateinit var id: UUID
+}
+```
+
+### Critical Rules
+
+- Use a **non-null UUID ID** pattern. For generated IDs, prefer `lateinit var id: UUID`. For application-assigned IDs, use a constructor-backed non-null `UUID`.
+- Never use `UUID? = null` for normal entity IDs. Nullable IDs are reserved for explicit `@MapsId` shared-primary-key cases.
+- `@Column(columnDefinition = "uuid")` remains the preferred choice for generated UUID IDs in class bodies.
+- `AuditableEntity()` provides constructor-backed `createdAt` and `updatedAt` fields and does not contain `@Id` - each entity defines its own ID strategy.
+
+## AuditableEntity Base Class
+
+```kotlin
+@MappedSuperclass
+abstract class AuditableEntity(
+    @Column(name = "created_at", nullable = false, updatable = false)
+    val createdAt: Instant = Instant.now(),
+
+    @Column(name = "updated_at", nullable = false)
+    var updatedAt: Instant = Instant.now()
+) {
+    @PreUpdate
+    fun onUpdate() {
+        updatedAt = Instant.now()
+    }
+}
+```
+
+## equals/hashCode with lateinit id
+
+Use `!::id.isInitialized` to handle transient (unpersisted) entities:
+
+```kotlin
+class SomeEntity(val name: String) : AuditableEntity() {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(columnDefinition = "uuid")
+    lateinit var id: UUID
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is SomeEntity) return false
+        return if (!::id.isInitialized) false else id == other.id
+    }
+
+    override fun hashCode(): Int {
+        return if (!::id.isInitialized) javaClass.hashCode() else id.hashCode()
+    }
+}
+```
+
+## Shared Primary Key (1:1 Relationships)
+
+For child entities that share the parent's PK, use `@MapsId`. The `@Id` is **nullable** here because JPA sets it from the parent:
+
+```kotlin
+@Entity
+@Table(name = "user_profile")
+class UserProfile(
+    @Id
+    @Column(name = "user_id", columnDefinition = "uuid")
+    var id: UUID? = null,
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @MapsId
+    @JoinColumn(name = "user_id")
+    var user: User,
+
+    var displayName: String,
+) : AuditableEntity()
+```
+
+This is the **only** normal case where `@Id` is nullable - because `@MapsId` fills it from the parent.
+
+## @ElementCollection for Enum Sets
+
+For `Set<SomeEnum>` stored in a separate table:
+
+```kotlin
+@ElementCollection(fetch = FetchType.LAZY)
+@Enumerated(EnumType.STRING)
+@CollectionTable(
+    name = "entity_enum_values",
+    joinColumns = [JoinColumn(name = "entity_id")]
+)
+@Column(name = "enum_value", nullable = false)
+var enumValues: MutableSet<SomeEnum> = mutableSetOf()
+```
+
+## JSONB Columns
+
+Use `@Type(JsonType::class)` from hypersistence-utils for `List` or `Map` types:
+
+```kotlin
+@Type(JsonType::class)
+@Column(columnDefinition = "jsonb")
+var metadata: Map<String, Any> = emptyMap()
+```
+
+
+## Collection Management
+
+Use helper methods for `orphanRemoval = true` collections - never reassign the collection reference:
+
+```kotlin
+// In the entity class:
+fun replaceItems(newItems: List<ChildEntity>) {
+    items.clear()
+    items.addAll(newItems)
+}
+
+fun addItem(item: ChildEntity) {
+    items.add(item)
+}
+```
+
+**Never do this:**
+```kotlin
+// WRONG - breaks orphan removal, causes Hibernate errors
+entity.items = newItemsList
+```
+
+## Relationship Patterns
+
+### OneToMany (parent -> children)
+
+```kotlin
+@OneToMany(mappedBy = "parent", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+var children: MutableList<ChildEntity> = mutableListOf()
+```
+
+### ManyToOne (child -> parent)
+
+```kotlin
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "parent_id")
+var parent: ParentEntity
+```
+
+**Always use `FetchType.LAZY`** for `@ManyToOne` - override the EAGER default.
+
+### ManyToMany
+
+```kotlin
+@ManyToMany(cascade = [CascadeType.PERSIST, CascadeType.MERGE], fetch = FetchType.LAZY)
+@JoinTable(
+    name = "entity_tags",
+    joinColumns = [JoinColumn(name = "entity_id")],
+    inverseJoinColumns = [JoinColumn(name = "tag_id")]
+)
+var tags: MutableSet<Tag> = mutableSetOf()
+```
+
+## Repository Conventions
+
+```kotlin
+@Repository
+interface SomeRepository : JpaRepository<SomeEntity, UUID> {
+    fun findByName(name: String): SomeEntity?
+    fun findAllByOwnerIdOrderByCreatedAtDesc(ownerId: UUID): List<SomeEntity>
+}
+```
+
+- Use Spring Data derived queries for simple cases
+- Use `@Query` with JPQL for complex queries
+- Add `JpaSpecificationExecutor<T>` when dynamic filtering is needed
+
+## N+1 Prevention
+
+### JOIN FETCH for known associations
+
+```kotlin
+@Query("SELECT e FROM SomeEntity e JOIN FETCH e.children WHERE e.id = :id")
+fun findByIdWithChildren(@Param("id") id: UUID): SomeEntity?
+```
+
+### @EntityGraph for declarative fetching
+
+```kotlin
+@EntityGraph(attributePaths = ["children", "tags"])
+fun findById(id: UUID): Optional<SomeEntity>
+```
+
+### Batch fetching globally
+
+Set in `application.yml`:
+```yaml
+spring.jpa.properties.hibernate.default_batch_fetch_size: 25
+```
+
+## Transaction Rules
+
+- `@Transactional` on write methods
+- `@Transactional(readOnly = true)` on read methods - optimizes dirty checking
+- Never call `@Transactional` methods from the same class (proxy bypass)

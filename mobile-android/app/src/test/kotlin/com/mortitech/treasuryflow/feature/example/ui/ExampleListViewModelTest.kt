@@ -1,0 +1,93 @@
+package com.mortitech.treasuryflow.feature.example.ui
+
+import com.mortitech.treasuryflow.R
+import com.mortitech.treasuryflow.core.common.AppResult
+import com.mortitech.treasuryflow.core.model.PagedData
+import com.mortitech.treasuryflow.designsystem.text.UiText
+import com.mortitech.treasuryflow.feature.auth.data.repository.AuthRepository
+import com.mortitech.treasuryflow.feature.example.data.repository.ExampleRepository
+import com.mortitech.treasuryflow.feature.example.domain.model.Example
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class ExampleListViewModelTest {
+
+    private val testDispatcher = StandardTestDispatcher()
+    private val exampleRepository = mockk<ExampleRepository>()
+    private val authRepository = mockk<AuthRepository>(relaxed = true)
+
+    private val testExamples = listOf(
+        Example("1", "First", "Description", "DRAFT", "user1", "2024-01-01", "2024-01-01"),
+        Example("2", "Second", null, "PUBLISHED", "user1", "2024-01-02", "2024-01-02"),
+    )
+
+    private val pagedResult = PagedData(
+        content = testExamples,
+        page = 0,
+        size = 20,
+        totalElements = 2,
+        totalPages = 1,
+    )
+
+    @Before
+    fun setup() {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `loads examples on init`() = runTest(testDispatcher) {
+        coEvery { exampleRepository.list(any(), any()) } returns AppResult.Success(pagedResult)
+
+        val viewModel = ExampleListViewModel(exampleRepository, authRepository)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is ExampleListUiState.Success)
+        assertEquals(2, (state as ExampleListUiState.Success).examples.size)
+    }
+
+    @Test
+    fun `shows error on failure`() = runTest(testDispatcher) {
+        coEvery { exampleRepository.list(any(), any()) } returns AppResult.Error("Network error")
+
+        val viewModel = ExampleListViewModel(exampleRepository, authRepository)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is ExampleListUiState.Error)
+        assertEquals(UiText.DynamicString("Network error"), (state as ExampleListUiState.Error).message)
+    }
+
+    @Test
+    fun `delete removes from list optimistically`() = runTest(testDispatcher) {
+        coEvery { exampleRepository.list(any(), any()) } returns AppResult.Success(pagedResult)
+        coEvery { exampleRepository.delete(any()) } returns AppResult.Success(Unit)
+
+        val viewModel = ExampleListViewModel(exampleRepository, authRepository)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.deleteExample("1")
+
+        val state = viewModel.uiState.value as ExampleListUiState.Success
+        assertEquals(1, state.examples.size)
+        assertEquals("2", state.examples.first().id)
+    }
+}

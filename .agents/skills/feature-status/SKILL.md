@@ -1,0 +1,97 @@
+---
+name: feature-status
+description: Show the full feature pipeline and refresh knowledge/wiki/WIKI_REPORT.md from current wiki state. Use for team coordination, standups, or first-pass orientation.
+---
+
+# Feature Status
+
+Show the current pipeline view and refresh the generated orientation report.
+
+This skill intentionally allows implicit invocation because it only refreshes the
+generated `knowledge/wiki/WIKI_REPORT.md` orientation artifact. That report is
+regenerable, gitignored, and not the source of truth for project state.
+
+## Workflow
+
+1. Read `knowledge/wiki/SCHEMA.md`
+2. Read `knowledge/wiki/SETTINGS.md` if present
+3. Read `knowledge/wiki/index.md`
+4. Read all feature files in `knowledge/wiki/features/`
+5. Read linked design, platform-requirements, api-contract, advisory-review, and
+   business-rule files as needed to compute blocker counts, open-question counts, and
+   recently updated pages
+6. Output the full pipeline view grouped by status
+7. Write or refresh `knowledge/wiki/WIKI_REPORT.md`
+
+## WIKI_REPORT rules
+
+- only `$feature-status` writes `knowledge/wiki/WIKI_REPORT.md`
+- `WIKI_REPORT.md` is generated and read-only
+- it is an orientation artifact, not the source of truth
+- if it disagrees with the underlying wiki files, the underlying wiki files win
+- include a short pointer to run `lint-wiki` for structural issues
+- do not put full lint conclusions into `WIKI_REPORT.md`
+
+If `knowledge/wiki/SETTINGS.md` is absent or invalid, fall back to
+`wiki-stale-after-days: 14` and tell the user.
+
+## Canonical format reference
+
+Mirror the detailed output contract from:
+
+- `/.claude/commands/feature-status.md`
+
+In particular, keep the generated `WIKI_REPORT.md` sections aligned with the Claude command.
+
+## Output format
+
+```text
+## Pipeline
+
+raw (N)             F-XXX - [title] | owner: po
+specified (N)       F-XXX - [title] | owner: po | open questions: N | board: pending
+ready-for-design    F-XXX - [title] | owner: designer | board: done
+in-design (N)       F-XXX - [title] | owner: designer
+ready-for-dev (N)   F-XXX - [title] | owner: dev | platforms: [list] | board: done
+in-dev (N)          F-XXX - [title] | owner: dev
+done (N)            F-XXX - [title]
+
+## Open questions by owner
+### PO
+- F-XXX - [question text]
+
+### Designer
+- F-XXX - [question text]
+
+### Developer
+- F-XXX - [question text]
+
+## Blocker snapshot
+- pending-board-review: N
+- missing-design: N
+- missing-platform-requirements: N
+- unresolved-open-questions: N
+
+## WIKI_REPORT required sections
+- Project summary
+- Features by lifecycle stage
+- Advisory review snapshot
+- Open questions by owner
+- Blocker snapshot
+- Recently updated wiki pages
+- Structural health pointer
+- Suggested next actions
+
+WIKI_REPORT refreshed:
+- knowledge/wiki/WIKI_REPORT.md
+
+Next drill-down tools:
+- $wiki-show F-XXX
+- $wiki-blockers
+```
+
+## Notes
+
+- Do not modify feature files, index.md, or log.md in this operation.
+- Only write `knowledge/wiki/WIKI_REPORT.md`.
+- If report refresh fails, still return the pipeline view and state that the refresh failed.

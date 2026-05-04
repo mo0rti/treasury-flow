@@ -1,0 +1,84 @@
+
+name: iOS CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile-ios/**'
+      - 'shared/**'
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mobile-ios/**'
+      - 'shared/**'
+
+jobs:
+  test:
+    name: Test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: mobile-ios
+        run: xcodegen generate
+
+      - name: Run tests
+        shell: bash
+        working-directory: mobile-ios
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project TreasuryFlow.xcodeproj \
+            -scheme Treasuryflow \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -resultBundlePath TestResults \
+            | xcpretty
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-results
+          path: mobile-ios/TestResults
+
+  release:
+    name: Release to TestFlight
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: macos-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: mobile-ios
+        run: xcodegen generate
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: mobile-ios
+
+      - name: Deploy to TestFlight
+        working-directory: mobile-ios
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        run: bundle exec fastlane beta
+

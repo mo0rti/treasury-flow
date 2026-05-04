@@ -1,0 +1,65 @@
+# Navigation and Screens - TreasuryFlow Android
+
+## Navigation setup
+
+- **Routes**: `navigation/Screen.kt` - sealed interface with `@Serializable` route definitions.
+- **Host**: `navigation/NavGraph.kt` - `NavHost` composition with all destinations.
+- **Library**: Jetpack Navigation Compose with type-safe routes.
+
+## Route definitions
+
+Routes are defined as a `@Serializable` sealed interface:
+
+```kotlin
+@Serializable
+sealed interface Screen {
+    @Serializable data object SocialSignIn : Screen
+    @Serializable data object SignIn : Screen
+    @Serializable data object ExampleList : Screen
+    @Serializable data class ExampleDetail(val id: String) : Screen
+}
+```
+
+## Auth gate
+
+NavGraph observes `SessionManager.authState` and switches between root flows:
+
+- `AuthState.Loading` -> loading state while the session is being resolved
+- `AuthState.Authenticated` -> main app flow when tokens are present
+- `AuthState.Unauthenticated` -> sign-in flow
+
+Do not drive auth transitions with screen-owned success or logout callbacks. Sign-in and logout update session state; NavGraph reacts to that state and swaps the active root flow.
+
+For unauthenticated navigation, `AuthConfig.authExperienceMode` selects the start route:
+
+- `EMAIL_PASSWORD_ONLY` -> `Screen.SignIn`
+- `SOCIAL_ONLY` -> `Screen.SocialSignIn`
+- `MIXED` -> `Screen.SocialSignIn`, with a secondary action that routes to `Screen.SignIn`
+
+## Screen mapping
+
+Each screen destination maps to a Route composable:
+
+```kotlin
+composable<Screen.SocialSignIn> {
+    SocialSignInRoute(
+        onContinueWithEmailPassword = { navController.navigate(Screen.SignIn) },
+    )
+}
+
+composable<Screen.SignIn> {
+    SignInRoute(
+        showBackToSocial = true,
+        onBackToSocial = { navController.popBackStack() },
+    )
+}
+```
+
+## Adding a new screen
+
+1. Add a route to `Screen` sealed interface in `navigation/Screen.kt`.
+2. Create `feature/<name>/ui/<Name>Route.kt` and `<Name>Screen.kt`.
+3. Create `feature/<name>/ui/<Name>ViewModel.kt` with `UiState`.
+4. Add the `composable<Screen.Name>` block in `NavGraph.kt`.
+5. Wire navigation callbacks from calling screens.
+6. Update this document with the new route.

@@ -1,0 +1,97 @@
+# TreasuryFlow - Product context
+
+This file is the master context anchor for all AI agents working in this repository.
+Read this before working in any platform directory.
+
+## Project identity
+
+**Name:** TreasuryFlow
+**Description:** A finance operations platform for payout approvals, settlements, and transaction oversight
+
+## First-time setup
+
+If this is a newly scaffolded project, run the setup command before anything else.
+It initializes the wiki, interviews you about your domain, and generates the advisory
+board configuration. It takes 15-20 minutes and runs once.
+
+- **Claude Code:** `/setup-project`
+- **Codex:** `$setup-project`
+- **Cursor:** ask the agent: "run setup-project" - it will follow the steps in
+  `knowledge/wiki/SCHEMA.md` and `.claude/commands/setup-project.md`
+
+## Repository structure
+
+```text
+treasuryflow/
+├── backend/           # Spring Boot 4 (Kotlin 2.2+, Java 21)
+├── web-user-app/      # Next.js + TypeScript user-facing web app
+├── web-admin-portal/  # Next.js + TypeScript admin web portal
+├── mobile-android/    # Kotlin + Jetpack Compose (MVVM)
+├── mobile-ios/        # Swift 6 + SwiftUI (MVVM)
+├── shared/            # OpenAPI 3.1 spec + design tokens
+├── knowledge/         # Living product wiki - single source of truth for all features
+├── infra/             # Azure deployment scripts
+└── docs/              # Human-readable architecture and operations docs
+```
+
+This generated repository includes the platform slices selected during generation.
+Read the root agent file first, then defer to the platform-local guidance inside the folders that are present.
+
+## The product wiki
+
+All product knowledge lives in `knowledge/wiki/`. Before implementing any feature:
+
+1. Read `knowledge/wiki/index.md` - confirm the feature is in `ready-for-dev` or `in-dev`
+   status and that `advisory-review` is not `pending`. If `advisory-review` is `pending`,
+   stop and inform the human - a board review should happen before implementation.
+2. Read `knowledge/wiki/features/[feature-id]-[slug].md` for full context
+3. Read `knowledge/wiki/platform-requirements/[feature-id]-[THIS_PLATFORM].md` for your
+   specific implementation requirements
+4. Read `knowledge/wiki/api-contracts/[feature-id].md` if this feature has an API surface
+5. Check `knowledge/wiki/business-rules/` for rules that apply to this feature
+6. Check `knowledge/wiki/advisory/BOARD.md` to understand the domain intelligence layer
+
+The wiki is the single source of truth. If a feature has no wiki page, do not implement
+it. Ask the human to run the `po-intake` operation first
+(Claude: `/po-intake [folder]`, Codex: `$po-intake [folder]`,
+Cursor: ask the agent to "run po-intake on [folder]").
+
+## Available commands
+
+### Claude Code
+
+| Category | Commands |
+|----------|----------|
+| Setup | `/setup-project` |
+| PO | `/po-intake [folder]`, `/po-clarify`, `/po-handoff [F-XXX]` |
+| Designer | `/design-intake [F-XXX] [folder]`, `/design-clarify`, `/design-handoff [F-XXX]` |
+| Developer | `/prep-sprint`, `/dev-done [F-XXX]` |
+| Board | `/board-review [F-XXX]` |
+| Shared | `/feature-status`, `/ask [F-XXX] "question" --to po\|designer\|dev`, `/audit-feature [F-XXX]`, `/lint-wiki`, `/wiki-show F-XXX`, `/wiki-blockers`, `/wiki-query "text"`, `/wiki-owner po\|designer\|dev`, `/wiki-platform <platform-id>` |
+
+### Codex
+
+| Category | Commands |
+|----------|----------|
+| Setup | `$setup-project` |
+| PO | `$po-intake [folder]`, `$po-clarify`, `$po-handoff [F-XXX]` |
+| Designer | `$design-intake [F-XXX] [folder]`, `$design-clarify`, `$design-handoff [F-XXX]` |
+| Developer | `$prep-sprint`, `$dev-done [F-XXX]` |
+| Board | `$board-review [F-XXX]` |
+| Shared | `$feature-status`, `$ask [F-XXX] "question" --to po\|designer\|dev`, `$audit-feature [F-XXX]`, `$lint-wiki`, `$wiki-show F-XXX`, `$wiki-blockers`, `$wiki-query "text"`, `$wiki-owner po\|designer\|dev`, `$wiki-platform <platform-id>` |
+
+### Cursor
+
+Ask the agent by operation name, for example `run setup-project` or `run po-intake on the folder meeting-notes-2026-04-07`. The agent will follow `.claude/commands/[command].md` and `knowledge/wiki/SCHEMA.md`.
+
+## Tech stack and architectural constraints
+
+See [Architecture Decision Records](knowledge/wiki/decisions/) for long-lived technical decisions.
+See [OpenAPI contract](shared/api-contracts/openapi.yml) for the API surface.
+See [Architecture Overview](docs/architecture.md) for the system map and platform boundaries.
+
+## Related Docs
+
+- [README.md](README.md) for setup and common commands
+- [Architecture Overview](docs/architecture.md) for the system map and platform boundaries
+- [API Conventions](docs/api/conventions.md) for URL, auth, versioning, and error-response rules

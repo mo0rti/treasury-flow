@@ -1,0 +1,118 @@
+# Backend - TreasuryFlow
+
+Spring Boot 4 (Kotlin 2.2+, Java 21) backend service.
+
+## Product knowledge wiki
+
+This project uses a shared product wiki at `knowledge/wiki/` as the single source of
+truth for what to build. Before implementing any feature:
+
+1. Read `knowledge/wiki/index.md` — confirm the feature is in `ready-for-dev` or `in-dev`
+   status and that `advisory-review` is not `pending`. If `advisory-review` is `pending`,
+   stop and inform the human — a board review should happen before implementation.
+2. Read `knowledge/wiki/features/[feature-id]-[slug].md` for full context
+3. Read `knowledge/wiki/platform-requirements/[feature-id]-backend.md` for backend-specific
+   implementation requirements
+4. Read `knowledge/wiki/api-contracts/[feature-id].md` if this feature has an API surface
+5. Check `knowledge/wiki/business-rules/` for rules that apply to this feature
+
+**Do not implement features without a wiki page.** Ask the human to run the `po-intake`
+operation first (Claude: `/po-intake [folder]`, Codex: `$po-intake [folder]`,
+Cursor: ask the agent to "run po-intake on [folder]").
+
+If you discover information during implementation that should update the wiki, propose
+the update and ask for confirmation before writing, or route a question using the `ask`
+command (Claude: `/ask F-XXX "..." --to po`, Codex: `$ask F-XXX "..." --to po`).
+
+## Build & Run
+
+- **Build**: `./gradlew build` (or `gradlew.bat build` on Windows)
+- **Run**: `./gradlew bootRun`
+- **Test**: `./gradlew test`
+- **Port**: 8080 (configurable via `PORT` env var)
+
+### Local Run Prerequisites
+
+Before running the backend locally:
+
+1. Start PostgreSQL with `docker compose up -d db` from the generated project root.
+2. Use the `local` Spring profile for IDE runs, including IntelliJ IDEA run configurations.
+
+3. If you want real OAuth locally, replace the placeholder provider values from `application-local.yml` with real credentials through your IDE environment variables or local overrides.
+
+The `local` profile exists to make first startup succeed without immediately requiring real OAuth credentials. OAuth callbacks will not work with the placeholder values.
+
+
+## Critical Rules
+
+### Forbidden Patterns
+
+- `entity -> DTO` imports (entities never depend on API DTOs)
+- `controller -> repository` imports (controllers call services, never repositories directly)
+- `runBlocking` in MVC controllers
+- Jackson annotations on JPA `@Entity` classes (use DTOs as the serialization boundary)
+
+### Gotchas
+
+- **Jackson 3.x split namespace**: core annotations stay at `com.fasterxml.jackson.annotation.*`, runtime classes moved to `tools.jackson.*`. There is NO `tools.jackson.annotation` package.
+- **Entity IDs**: generated entities use `lateinit var id: UUID` in the class body. Application-assigned identity entities such as `User` may use a constructor-backed non-null `UUID`. Do not make IDs nullable unless you are explicitly using `@MapsId`. Use `!::id.isInitialized` in equals/hashCode for `lateinit` IDs.
+- **Inject ObjectMapper**: Spring beans must inject `tools.jackson.databind.ObjectMapper`, never create standalone `jacksonObjectMapper()`.
+- **File granularity**: keep each DTO, entity, enum, and reusable value object in its own Kotlin file. Avoid `*Dtos.kt` aggregator files and avoid nesting reusable enums inside entity files.
+
+## Architecture
+
+```
+src/main/kotlin/com/mortitech/treasuryflow/
+  bootstrap/         - Framework config (Security, CORS, OAuth2, OpenAPI)
+    security/        - JWT token provider and authentication filter
+  shared/            - Cross-cutting concerns (exceptions, models, audit)
+    audit/           - AuditableEntity base class (createdAt/updatedAt)
+    error/           - Typed ErrorCode abstractions and shared/common API error codes
+    exception/       - ApiException hierarchy + GlobalExceptionHandler
+    model/           - Shared DTOs (ApiErrorResponse, PagedResponse)
+  modules/           - Feature modules
+    auth/            - Authentication (password + OAuth + JWT)
+      error/         - Auth-specific error codes
+    transactions/    - Transaction CRUD, visibility, and ownership rules
+      error/         - Transaction-specific error codes
+```
+
+Each module can contain: `controller/`, `dto/`, `error/`, `model/`, `repository/`, `service/`.
+
+## Conventions
+
+Detailed conventions are documented in local Codex skills:
+
+- `$spring-boot-conventions` - module structure, layers, controller/service/DTO patterns
+- `$security-auth` - JWT, route exposure, OAuth2, and current-user access
+- `$error-handling` - `ApiException`, validation responses, and API error codes
+- `$testing-patterns` - JUnit 5, MockK, unit versus integration test conventions
+- `$endpoint` - end-to-end endpoint delivery, including contract updates
+- `$document-entity` - create or update backend entity documentation and keep architecture docs aligned
+- `$generate-clients` - regenerate typed clients after OpenAPI changes
+
+## Key Files
+
+- `bootstrap/SecurityConfig.kt` - endpoint security rules, JWT filter
+- `bootstrap/security/JwtTokenProvider.kt` - token generation/validation
+- `shared/audit/AuditableEntity.kt` - base entity with timestamps
+- `shared/error/` - typed ErrorCode abstractions and shared/common API error codes
+- `shared/exception/` - ApiException base type, built-in exception files, and global exception mapping
+- `application.yml` - all configuration (DB, JWT, OAuth, CORS)
+
+## API
+
+See `docs/api/conventions.md` for REST conventions.
+See `shared/api-contracts/openapi.yml` for the full API spec.
+
+## Local Codex Skills
+
+Project-specific Codex skills live in `.agents/skills/`.
+
+- `$spring-boot-conventions` - backend controller, service, DTO, and package-structure conventions
+- `$security-auth` - JWT, route exposure, OAuth2, and current-user access
+- `$error-handling` - `ApiException`, validation responses, and API error codes
+- `$endpoint` - guide end-to-end backend endpoint work, including contract updates
+- `$document-entity` - create or update entity documentation in `backend/docs/entities/`
+- `$testing-patterns` - backend unit and integration test conventions
+- `$generate-clients` - regenerate typed clients after OpenAPI changes

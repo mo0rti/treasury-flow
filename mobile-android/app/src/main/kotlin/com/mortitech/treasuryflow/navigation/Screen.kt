@@ -1,0 +1,23 @@
+package com.mortitech.treasuryflow.navigation
+
+import kotlinx.serialization.Serializable
+
+sealed interface Screen {
+    @Serializable
+    data object Welcome : Screen
+
+    @Serializable
+    data object AuthRoot : Screen
+
+    @Serializable
+    data object SocialSignIn : Screen
+
+    @Serializable
+    data object SignIn : Screen
+
+    @Serializable
+    data object ExampleList : Screen
+
+    @Serializable
+    data class ExampleDetail(val id: String) : Screen
+}

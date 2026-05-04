@@ -1,0 +1,83 @@
+# File Structure - TreasuryFlow Android
+
+**Base package:** `com.mortitech.treasuryflow`
+**Source root:** `app/src/main/kotlin/com/mortitech/treasuryflow/`
+
+## Root Layout
+
+```
+mobile-android/
+|-- .claude/skills/          <- Repository-local Claude skills (if present)
+|-- app/
+|   |-- build.gradle.kts
+|   |-- src/main/
+|   |   |-- kotlin/com/mortitech/treasuryflow/  <- app source (see below)
+|   |   \-- res/values/      <- strings.xml, themes.xml
+|   |-- src/test/            <- unit tests (mirrors main source)
+|   \-- src/androidTest/     <- instrumentation and Compose UI tests
+|-- build.gradle.kts         <- root build file
+|-- settings.gradle.kts
+|-- gradle.properties
+|-- gradlew / gradlew.bat   <- Gradle wrapper
+\-- gradle/                  <- Gradle wrapper JAR
+```
+
+## App Source Tree
+
+### `app/` - Application entry
+
+| Path | Purpose |
+|------|---------|
+| `app/TreasuryFlowApplication.kt` | `@HiltAndroidApp` application class. |
+| `app/MainActivity.kt` | Single activity; sets theme and hosts NavGraph. |
+
+### `core/` - Cross-cutting infrastructure
+
+| Package | Purpose |
+|---------|---------|
+| `core/common/` | `AppResult<T>` wrapper. |
+| `core/session/` | `SessionManager` - auth state and token access. |
+| `core/network/` | `ApiService`, `AuthInterceptor`, `TokenAuthenticator`. |
+| `core/datastore/` | `TokenStorage` (DataStore-backed token persistence). |
+| `core/database/` | `AppDatabase`, `Converters` (shared Room infrastructure). |
+| `core/di/` | Hilt modules: `NetworkModule`, `DatabaseModule`, `DispatcherModule`, `AppModule`. |
+| `core/model/` | Cross-feature models: `User`, `Session` (AuthState), `Paging`. |
+
+### `feature/` - Feature modules
+
+Each feature follows: `feature/<name>/data/` + `feature/<name>/domain/` + `feature/<name>/ui/`.
+
+| Feature | Contents |
+|---------|----------|
+| `feature/auth/` | `AuthConfig` and auth mode selection for unauthenticated navigation. |
+| `feature/auth/domain/` | `AuthCredentials`, `AuthProvider`, `SignInInputValidator`. |
+| `feature/auth/data/` | `AuthRepository`, `AuthDtos`. |
+| `feature/auth/ui/` | `SocialSignInRoute`, `SocialSignInScreen`, `SignInRoute`, `SignInScreen`, `SignInViewModel`, `components/`. |
+| `feature/example/domain/` | `Example` model. |
+| `feature/example/data/` | `ExampleRepository`, `ExampleDtos`, `ExampleEntity`, `ExampleDao`, Mappers. |
+| `feature/example/ui/` | `ExampleListRoute`, `ExampleListScreen`, `ExampleListViewModel`, `components/`. |
+
+### `designsystem/` - Theme and reusable UI
+
+| Package | Purpose |
+|---------|---------|
+| `designsystem/theme/` | `AppTheme`, Color, Type, Shape, Dimensions. |
+| `designsystem/preview/` | Shared day/night preview annotations for Compose screens. |
+| `designsystem/text/` | `UiText` (framework-light string wrapper). |
+| `designsystem/components/` | Shared composables: `LoadingIndicator`, `ErrorView`. |
+
+### `navigation/` - Routes and nav host
+
+| Path | Purpose |
+|------|---------|
+| `navigation/Screen.kt` | Sealed route definitions with `@Serializable`. |
+| `navigation/NavGraph.kt` | NavHost composition; unauthenticated start destination is selected from auth state and `AuthConfig`. |
+
+## Conventions
+
+- **Single module**: All app code in `:app`.
+- **Features**: Under `feature/` with `data/`, `domain/`, and `ui/` sub-packages.
+- **Core**: Shared infrastructure in `core/` (network, database, DI, session, model).
+- **Design system**: Theme and components under `designsystem/`.
+- **DI**: Hilt modules under `core/di/`; concrete repositories injected by type (no RepositoryModule).
+- **Tests**: Mirror source structure under `app/src/test/` for unit tests and `app/src/androidTest/` for instrumentation/UI tests.

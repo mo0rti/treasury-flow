@@ -1,0 +1,91 @@
+package com.mortitech.treasuryflow.bootstrap
+
+import com.mortitech.treasuryflow.bootstrap.security.JwtTokenProvider
+import com.mortitech.treasuryflow.modules.auth.model.AuthProvider
+import com.mortitech.treasuryflow.modules.auth.model.User
+import com.mortitech.treasuryflow.modules.auth.repository.UserRepository
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.MediaType
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+class SecurityConfigTest {
+
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
+    @Autowired
+    private lateinit var userRepository: UserRepository
+
+    @Autowired
+    private lateinit var jwtTokenProvider: JwtTokenProvider
+
+    @Test
+    fun `me endpoint is not public`() {
+        mockMvc.perform(get("/api/v1/auth/me"))
+            .andExpect(status().is4xxClientError)
+    }
+
+    @Test
+    fun `refresh endpoint remains public and reaches request validation`() {
+        mockMvc.perform(
+            post("/api/v1/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}")
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `logout endpoint is not public`() {
+        mockMvc.perform(post("/api/v1/auth/logout"))
+            .andExpect(status().is4xxClientError)
+    }
+
+    @Test
+    fun `me endpoint rejects refresh token bearer authentication`() {
+        val user = userRepository.save(User(
+            email = "refresh@example.com",
+            displayName = "Refresh Token User",
+            authProvider = AuthProvider.LOCAL
+        ))
+        val refreshToken = jwtTokenProvider.generateRefreshToken(user)
+
+        mockMvc.perform(
+            get("/api/v1/auth/me")
+                .header("Authorization", "Bearer $refreshToken")
+        )
+            .andExpect(status().is4xxClientError)
+    }
+
+    @Test
+    fun `swagger ui is not exposed in the test profile`() {
+        mockMvc.perform(get("/swagger-ui.html"))
+            .andExpect(status().is4xxClientError)
+    }
+
+    @Test
+    fun `logout endpoint accepts authenticated access token`() {
+        val user = userRepository.save(User(
+            email = "logout@example.com",
+            displayName = "Logout User",
+            authProvider = AuthProvider.LOCAL
+        ))
+        val accessToken = jwtTokenProvider.generateAccessToken(user)
+
+        mockMvc.perform(
+            post("/api/v1/auth/logout")
+                .header("Authorization", "Bearer $accessToken")
+        )
+            .andExpect(status().isNoContent)
+    }
+}

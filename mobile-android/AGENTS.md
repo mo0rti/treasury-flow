@@ -1,0 +1,131 @@
+# Android - TreasuryFlow
+
+Kotlin + Jetpack Compose with MVVM, Hilt, Retrofit, Room, and DataStore.
+
+## Product knowledge wiki
+
+This project uses a shared product wiki at `knowledge/wiki/` as the single source of
+truth for what to build. Before implementing any feature:
+
+1. Read `knowledge/wiki/index.md` — confirm the feature is in `ready-for-dev` or `in-dev`
+   status and that `advisory-review` is not `pending`. If `advisory-review` is `pending`,
+   stop and inform the human — a board review should happen before implementation.
+2. Read `knowledge/wiki/features/[feature-id]-[slug].md` for full context
+3. Read `knowledge/wiki/platform-requirements/[feature-id]-mobile-android.md` for
+   Android-specific implementation requirements
+4. Read `knowledge/wiki/api-contracts/[feature-id].md` if this feature has an API surface
+5. Check `knowledge/wiki/business-rules/` for rules that apply to this feature
+6. Read `knowledge/wiki/design/[feature-id]-[slug].md` for UI design decisions
+
+**Do not implement features without a wiki page.** Ask the human to run the `po-intake`
+operation first (Claude: `/po-intake [folder]`, Codex: `$po-intake [folder]`,
+Cursor: ask the agent to "run po-intake on [folder]").
+
+If you discover information during implementation that should update the wiki, propose
+the update and ask for confirmation before writing, or route a question using the `ask`
+command (Claude: `/ask F-XXX "..." --to po`, Codex: `$ask F-XXX "..." --to po`).
+
+## Documentation
+
+Full project documentation is in `docs/`. Use it as the reference for architecture, file structure, build, networking, navigation, design system, and workflows.
+
+- `docs/architecture.md` - MVVM, layers, DTO-first, repositories, session, navigation
+- `docs/file-structure.md` - Package layout: `feature/`, `core/`, `designsystem/`, `navigation/`
+- `docs/build-and-environments.md` - Build commands, SDK versions, troubleshooting
+- `docs/testing.md` - compile/unit/instrumentation layers, emulator workflow, CI verification
+- `docs/networking-and-di.md` - Retrofit, OkHttp, auth, Hilt modules
+- `docs/navigation-and-screens.md` - Routes (Screen.kt), NavGraph, auth gate, screen mapping
+- `docs/design-system-and-theme.md` - AppTheme, colors, typography, design system components, UiText
+- `docs/conventions-and-workflow.md` - Strings, dispatchers, SessionManager, new-feature workflow
+
+## Workspace Root
+
+This `mobile-android/` folder is a platform slice inside the generated project, not the
+generated project root.
+
+For Codex work, prefer opening the **generated repository root** so root context files and
+project skills are available together with the Android code.
+
+From `mobile-android/`, the generated repository root is:
+
+- `../`
+
+Important root-level files and folders from here:
+
+- `../README.md` - generated project overview
+- `../CONTEXT.md` - root AI context anchor
+- `../AGENTS.md` - root Codex guidance for the generated repo
+- `../.agents/skills/` - project Codex skills shared across the generated repo
+
+If you open only `mobile-android/` as a standalone workspace, do not assume Codex can
+automatically discover skills or root context from the parent repository. In that setup,
+manually check the parent generated-project root when it is available.
+
+## Build & Run
+
+```bash
+./gradlew assembleDebug          # Build APK (or gradlew.bat on Windows)
+./gradlew compileDebugKotlin     # Fast compile check
+./gradlew compileDebugAndroidTestKotlin  # Compile instrumentation / Compose UI tests
+./gradlew testDebugUnitTest      # Unit tests
+./gradlew lintDebug              # Android lint checks
+./gradlew connectedDebugAndroidTest  # Instrumentation / Compose UI tests
+./gradlew assembleRelease        # Release APK / shrinker validation
+./gradlew installDebug           # Install on device
+adb devices                      # List connected devices/emulators
+```
+
+Min SDK: 29 | Target SDK: 36 | Compile SDK: 36
+
+## Architecture
+
+MVVM in a single `:app` module.
+
+- Feature code: `feature/<name>/data/` (API, DTOs, repository), `feature/<name>/domain/` (models), `feature/<name>/ui/` (screens, ViewModels)
+- Shared UI/theme: `designsystem/` (theme, components, text)
+- Cross-cutting: `core/` (network, database, session, DI, model)
+- Repositories: Concrete classes only in `feature/*/data/repository/`; no repository interfaces
+- Navigation: Routes in `navigation/Screen.kt`, host in `navigation/NavGraph.kt`
+
+## Key Conventions
+
+- MVVM: `StateFlow` for UI state, `SharedFlow` for one-off events, explicit `onXxx(...)` ViewModel methods
+- Hilt for DI; Retrofit in `core/di/NetworkModule.kt`; use `SessionManager` for auth state and `AppResult` for fallible repository work
+- Strings in `strings.xml`; use `stringResource` or `UiText`
+- Keep navigation in `Screen.kt` and `NavGraph.kt`
+- Keep reusable Compose components in `designsystem/` instead of feature-local files
+- DTOs (`@Serializable`) in `feature/*/data/remote/dto/`; domain models are framework-light
+- `AppResult<T>` instead of `kotlin.Result`
+- ViewModels map repository errors into `UiText` before exposing them
+- Dispatchers: Use `@IoDispatcher`, `@DefaultDispatcher`, `@MainDispatcher` qualifiers
+- Tests: MockK + Turbine for unit tests, Compose UI tests under `app/src/androidTest/`, and Hilt Android testing for instrumentation when DI overrides are needed
+- Emulator baseline: API 36 phone for standard UI verification; add API 29 phone when changes touch auth, insets, storage, or device behavior
+
+## Doc-Sync Rule
+
+When you change code, update the relevant documentation in `docs/` in the same session.
+
+## Workflow: New Feature
+
+1. Check `docs/conventions-and-workflow.md` and existing patterns
+2. Verify API contract in `shared/api-contracts/openapi.yml`
+3. Plan DTO/API/repository/ViewModel/screen/navigation changes
+4. Implement using MVVM conventions
+5. Validate with `./gradlew compileDebugKotlin`, targeted tests, `./gradlew lintDebug` when resources or manifests change, and `./gradlew connectedDebugAndroidTest` on an emulator when UI behavior changes
+6. Update affected docs
+
+## Local Codex Skills
+
+Project-specific Codex skills live in `.agents/skills/`.
+
+In this generated project, that path is relative to the **generated repository root**, not
+inside `mobile-android/`. From this folder, the expected location is:
+
+- `../.agents/skills/`
+
+- `$android-conventions` - repository-wide Android MVVM, DI, navigation, strings, and doc-sync guardrails
+- `$android-build-verify` - pick the smallest trustworthy Gradle validation for Android changes
+- `$android-contract-alignment` - own DTO, Retrofit, enum, mapper, and auth-boundary contract decisions
+- `$android-feature-delivery` - coordinate larger feature work across docs, contracts, and platform code
+- `$android-testing` - own unit-test, Compose UI test, and Hilt-aware instrumentation patterns
+- `$compose-design-system` - own shared Compose UI language, reusable components, and screen-pattern reuse

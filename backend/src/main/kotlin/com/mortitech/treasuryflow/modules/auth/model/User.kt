@@ -1,0 +1,43 @@
+package com.mortitech.treasuryflow.modules.auth.model
+
+import com.mortitech.treasuryflow.shared.audit.AuditableEntity
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.Id
+import jakarta.persistence.Table
+import java.util.UUID
+
+@Entity
+@Table(name = "users")
+class User(
+    @Id
+    val id: UUID = UUID.randomUUID(),
+
+    @Column(nullable = false, unique = true)
+    var email: String,
+
+    @Column(name = "display_name", nullable = false)
+    var displayName: String,
+
+    @Column(name = "avatar_url")
+    var avatarUrl: String? = null,
+
+    @Column(name = "password_hash")
+    var passwordHash: String? = null,
+
+    @Column(name = "auth_provider", nullable = false)
+    @Enumerated(EnumType.STRING)
+    var authProvider: AuthProvider = AuthProvider.LOCAL,
+
+    @Column(name = "provider_id")
+    var providerId: String? = null,
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    var role: UserRole = UserRole.USER,
+
+    @Column(name = "refresh_token_version", nullable = false)
+    var refreshTokenVersion: Int = 0
+) : AuditableEntity()
