@@ -21,6 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Make Gradle wrapper executable
+        run: chmod +x backend/gradlew
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -92,4 +95,3 @@ jobs:
             --name ${{ secrets.AZURE_CONTAINER_APP_NAME }} \
             --image "$IMAGE" \
             --revision-suffix "$REVISION"
-
