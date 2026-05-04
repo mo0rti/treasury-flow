@@ -7,12 +7,6 @@ A finance operations platform for payout approvals, settlements, and transaction
 ![Workflow](https://img.shields.io/badge/workflow-wiki--driven-0A7EA4)
 ![API](https://img.shields.io/badge/API-OpenAPI--first-6BA539)
 ![Backend Version](https://img.shields.io/badge/backend-0.1.0--SNAPSHOT-informational)
-![Backend](https://github.com/mo0rti/treasury-flow/actions/workflows/backend.yml/badge.svg)
-![API Contracts](https://github.com/mo0rti/treasury-flow/actions/workflows/api-contracts.yml/badge.svg)
-![Web User App](https://github.com/mo0rti/treasury-flow/actions/workflows/web-user-app.yml/badge.svg)
-![Web Admin Portal](https://github.com/mo0rti/treasury-flow/actions/workflows/web-admin-portal.yml/badge.svg)
-![Android](https://github.com/mo0rti/treasury-flow/actions/workflows/mobile-android.yml/badge.svg)
-![iOS](https://github.com/mo0rti/treasury-flow/actions/workflows/mobile-ios.yml/badge.svg)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.1-6DB33F?logo=springboot&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.2.0-7F52FF?logo=kotlin&logoColor=white)
 ![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
@@ -26,6 +20,18 @@ development.
 If you want to understand how this project is structured, why the docs and AI
 context files are laid out this way, or how to generate a similar workspace,
 start with the Prism repository.
+
+## Workflow Status
+
+![Backend](https://github.com/mo0rti/treasury-flow/actions/workflows/backend.yml/badge.svg)
+![API Contracts](https://github.com/mo0rti/treasury-flow/actions/workflows/api-contracts.yml/badge.svg)
+![Web User App](https://github.com/mo0rti/treasury-flow/actions/workflows/web-user-app.yml/badge.svg)
+![Web Admin Portal](https://github.com/mo0rti/treasury-flow/actions/workflows/web-admin-portal.yml/badge.svg)
+![Android](https://github.com/mo0rti/treasury-flow/actions/workflows/mobile-android.yml/badge.svg)
+![iOS](https://github.com/mo0rti/treasury-flow/actions/workflows/mobile-ios.yml/badge.svg)
+
+Use `workflow_dispatch` from the Actions tab to seed any workflow badge that
+still shows `no status` after the first push.
 
 ## Architecture
 
