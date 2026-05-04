@@ -2,6 +2,21 @@
 
 A finance operations platform for payout approvals, settlements, and transaction oversight
 
+![Generated With Prism](https://img.shields.io/badge/generated%20with-Prism-5B4BFF)
+![Status](https://img.shields.io/badge/status-generated%20workspace-1f6feb)
+![Workflow](https://img.shields.io/badge/workflow-wiki--driven-0A7EA4)
+![API](https://img.shields.io/badge/API-OpenAPI--first-6BA539)
+![Backend Version](https://img.shields.io/badge/backend-0.1.0--SNAPSHOT-informational)
+![Backend](https://github.com/mo0rti/treasury-flow/actions/workflows/backend.yml/badge.svg)
+![API Contracts](https://github.com/mo0rti/treasury-flow/actions/workflows/api-contracts.yml/badge.svg)
+![Web User App](https://github.com/mo0rti/treasury-flow/actions/workflows/web-user-app.yml/badge.svg)
+![Web Admin Portal](https://github.com/mo0rti/treasury-flow/actions/workflows/web-admin-portal.yml/badge.svg)
+![Android](https://github.com/mo0rti/treasury-flow/actions/workflows/mobile-android.yml/badge.svg)
+![iOS](https://github.com/mo0rti/treasury-flow/actions/workflows/mobile-ios.yml/badge.svg)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.1-6DB33F?logo=springboot&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.2.0-7F52FF?logo=kotlin&logoColor=white)
+![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
+
 ## Built With Prism
 
 This workspace was generated with [Prism](https://github.com/mo0rti/prism), a
